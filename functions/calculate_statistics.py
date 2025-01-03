@@ -20,7 +20,7 @@ def calculate_statistics(df):
         std_dev = df[df['variation'] == category]['efficiency'].std()
         # Median and closest value to median
         med_eff = df[df['variation'] == category]['efficiency'].median()
-        closest_med_eff_value = sorted(df[df['variation'] == category]['efficiency'],
+        closest_med_eff_value = sorted(df[df['variation'] == category]['efficiency'].dropna(),
                                        key=lambda x: abs(x - med_eff - 0.000000001))[:1]
         med_id = df[df['efficiency'] == closest_med_eff_value[0]]['sample_id'].values[0]
         # Maximum efficiency value
@@ -38,17 +38,21 @@ def calculate_statistics(df):
             'maximum_efficiency_id': [max_id]
             })
 
+        uniquevar = df['variation'].unique()
         # Concatenate the temporary DataFrame with the result DataFrame
-        result_df = pd.concat([result_df, temp_df], ignore_index=True)
+        if result_df.empty:
+            result_df = temp_df
+        else:
+            result_df = pd.concat([result_df, temp_df], ignore_index=True)
 
     # Perform ANOVA test
-    f_statistic, p_value = f_oneway(*[group['efficiency'] for name, group in df.groupby(quantities[0])])
-
+    f_statistic, p_value = f_oneway(*[group['efficiency'].values for _, group in df.groupby('variation')])
+    
     if p_value < 0.05:
         # Perform Tukey HSD test
         tukey_results = pairwise_tukeyhsd(df['efficiency'], df['variation'], alpha=0.05)
         print(tukey_results)
     else:
         print("No significant differences between group means.")
-            
+
     return result_df

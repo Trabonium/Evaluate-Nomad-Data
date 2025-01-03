@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 
 from matplotlib.backends.backend_pdf import PdfPages
 from openpyxl import load_workbook
