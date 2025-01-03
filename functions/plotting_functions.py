@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from api_calls_get_data import get_specific_data_of_sample
+from functions.api_calls_get_data import get_specific_data_of_sample
 
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________

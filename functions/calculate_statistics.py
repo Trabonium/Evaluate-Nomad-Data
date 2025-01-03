@@ -5,7 +5,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 ### Function to calculate statistics of data ###_____________________________________________________________________________________
 
-def calculate_statistics(df, quantities):    
+def calculate_statistics(df):    
 
     result_df = pd.DataFrame(columns=['category',
                                       'standard_deviation',

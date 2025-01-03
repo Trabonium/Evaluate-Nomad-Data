@@ -5,28 +5,12 @@
 """
 
 import requests
-import getpass
 import pandas as pd
 import numpy as np
-user = "daniel.baumann4@kit.edu"  # input("Username")
-
-password = getpass.getpass()
-url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
 
-# Get a token from the api, login
-response = requests.get(
-    f'{url}/auth/token', params=dict(username=user, password=password))
-token = response.json()['access_token']
-
-response = requests.get(
-    f'{url}/uploads',
-    headers={'Authorization': f'Bearer {token}'})
-uploads = response.json()['data']
-
-
-def get_entryid(sample_id):  # give it a batch id
-    # get al entries related to this batch id
+def get_entryid(sample_id, nomad_url, token):  # give it a batch id
+    # get all entries related to this batch id
     query = {
         'required': {
             'metadata': '*'
@@ -38,7 +22,7 @@ def get_entryid(sample_id):  # give it a batch id
         }
     }
     response = requests.post(
-        f'{url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query)
+        f'{nomad_url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query)
     data = response.json()["data"]
     assert len(data) == 1
     return data[0]["entry_id"]
@@ -53,7 +37,7 @@ def return_value(data, path):
     return data
 
 
-def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities):
+def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, nomad_url, token):
     if not isinstance(key_1, list):
         key_1 = [key_1]
     # collect the results of the sample, in this case it are all the annealing temperatures
@@ -74,7 +58,7 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities):
                 'page_size': 100
             }
         }
-        response = requests.post(f'{url}/entries/archive/query',
+        response = requests.post(f'{nomad_url}/entries/archive/query',
                                  headers={'Authorization': f'Bearer {token}'}, json=query)
         #print(response.json())
         linked_data = response.json()["data"]
@@ -106,7 +90,7 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities):
 
 
 
-def get_specific_data_of_sample(sample_id, entry_type, with_meta=False):
+def get_specific_data_of_sample(sample_id, entry_type, nomad_url, token, with_meta=False):
     # collect the results of the sample, in this case it are all the annealing temperatures
     entry_id = get_entryid(sample_id)
 
@@ -121,7 +105,7 @@ def get_specific_data_of_sample(sample_id, entry_type, with_meta=False):
             'page_size': 100
         }
     }
-    response = requests.post(f'{url}/entries/archive/query',
+    response = requests.post(f'{nomad_url}/entries/archive/query',
                              headers={'Authorization': f'Bearer {token}'}, json=query)
     linked_data = response.json()["data"]
     res = []

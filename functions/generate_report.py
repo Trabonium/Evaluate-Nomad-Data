@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from plotting_functions import plot_JV_curves, plot_box_and_scatter, plot_EQE_curves, plot_MPP_curves
+from functions.plotting_functions import plot_JV_curves, plot_box_and_scatter, plot_EQE_curves, plot_MPP_curves
 
 ### Function to generate PDF report ###__________________________________________________________________________________________________
 
