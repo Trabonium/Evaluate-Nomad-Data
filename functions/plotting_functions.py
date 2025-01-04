@@ -6,7 +6,7 @@ from functions.api_calls_get_data import get_specific_data_of_sample
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
-def plot_JV_curves(result_df, curve_type):
+def plot_JV_curves(result_df, curve_type, nomad_url, token):
     fig, ax = plt.subplots()
     
     # Define a color palette for the groups
@@ -16,7 +16,7 @@ def plot_JV_curves(result_df, curve_type):
     ax.set_prop_cycle(color=colors)
     
     for index, row in result_df.iterrows():
-        jv_data = get_specific_data_of_sample(row[f'{curve_type}_id'], "JVmeasurement")
+        jv_data = get_specific_data_of_sample(row[f'{curve_type}_id'], "JVmeasurement", nomad_url, token)
         for cell in jv_data:
             for i in range(2):
                 if cell["jv_curve"][i]["efficiency"] == row[f'{curve_type}'] and \
@@ -68,19 +68,20 @@ def plot_box_and_scatter(df, quantities, jv_quantity):
 
     fig, ax = plt.subplots(figsize=(10, 5))
 
-    positions = [i + 1 for i in range(len(df['variation'].unique()))]  # Define positions for each group
+    # Sort the unique variation groups first to ensure consistent order
+    sorted_groups = sorted(df['variation'].unique())
+    positions = [i + 1 for i in range(len(sorted_groups))]  # Define positions for each group
 
     # Draw the box plot without fliers and with colors
-    boxprops = dict(facecolor='white', color='black')
     medianprops = dict(color='red')
-    for i, (group, color) in enumerate(zip(sorted(df['variation'].unique()), colors)):
-        group_data = df[df['variation'] == group][jv_quantity]
+    for i, (group, color) in enumerate(zip(sorted_groups, colors)):
+        group_data = df[df['variation'] == group][jv_quantity].dropna()
         box = ax.boxplot(group_data, positions=[positions[i]], showmeans=False, showfliers=False, widths=0.5, patch_artist=True,
                           boxprops=dict(facecolor=color, color='black'),
                           medianprops=medianprops)
 
     # Overlay the scatter plot with black points
-    for i, group in enumerate(sorted(df['variation'].unique())):
+    for i, group in enumerate(sorted_groups):
         group_data = df[df['variation'] == group]
         # Add jitter to x positions
         jittered_x = np.random.normal(loc=positions[i], scale=0.05, size=len(group_data))
@@ -89,7 +90,7 @@ def plot_box_and_scatter(df, quantities, jv_quantity):
     # Axis label and Ticks
     ax.set_ylabel(f"{quantity_labels[jv_quantity]}", size=16)
     ax.set_xticks(positions)
-    ax.set_xticklabels(df['variation'].unique(), size=14)
+    ax.set_xticklabels(sorted_groups, size=14)
     ax.set_yticks(ax.get_yticks())
     ax.tick_params(axis='both', labelsize=14)
 
@@ -106,15 +107,11 @@ def plot_box_and_scatter(df, quantities, jv_quantity):
     fig.patch.set_facecolor('none')
     ax.patch.set_facecolor('none')
 
-    # Save the figure
-    #fig.savefig(f"{jv_quantity}.png", dpi=300, transparent=True, bbox_inches='tight')
-
     return fig
-
 
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
-def plot_EQE_curves(result_df):
+def plot_EQE_curves(result_df,nomad_url, token):
     
     fig, ax = plt.subplots()
     
@@ -126,7 +123,7 @@ def plot_EQE_curves(result_df):
     
     for index, row in result_df.iterrows():
         #Data from server
-        eqe_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'EQEmeasurement')
+        eqe_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'EQEmeasurement', nomad_url, token)
         #Relevant arrays
         wavelength_array = eqe_data[0]['eqe_data'][0]['wavelength_array']
         eqe_array = eqe_data[0]['eqe_data'][0]['eqe_array']
@@ -162,7 +159,7 @@ def plot_EQE_curves(result_df):
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
-def plot_MPP_curves(result_df):
+def plot_MPP_curves(result_df, nomad_url, token):
     
     fig, ax = plt.subplots()
     
@@ -174,7 +171,7 @@ def plot_MPP_curves(result_df):
     
     for index, row in result_df.iterrows():
         #Data from server
-        mpp_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'MPPTracking')
+        mpp_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'MPPTracking', nomad_url, token)
         #Relevant arrays
         time_array = mpp_data[0]['time']
         pce_array = mpp_data[0]['efficiency']

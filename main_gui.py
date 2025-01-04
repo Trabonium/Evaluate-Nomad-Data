@@ -18,6 +18,8 @@ token = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 token = None  # This will store the token
 
+
+# Function to log in to NOMAD
 def login_handler():
     global token, nomad_url
     username = username_entry.get()
@@ -48,12 +50,15 @@ def login_handler():
         messagebox.showerror("Login Failed", f"Error: {e}")
 
 
+# Function to select an Excel file
 def select_file():
     global selected_file_path
     selected_file_path = filedialog.askopenfilename(title="Select Excel File", filetypes=[("Excel files", "*.xlsx")])
     if selected_file_path:
         file_path_label.config(text=f"Selected File: {selected_file_path}")
 
+
+# Function to load data from the selected file
 def load_data():
     global data
     if not selected_file_path:
@@ -62,14 +67,11 @@ def load_data():
     try:
         data = get_data_excel_to_df(selected_file_path, nomad_url, token)
         messagebox.showinfo("Success", "Data loaded successfully!")
-        # Show the first 10 rows of the DataFrame
-        first_10_rows = data.head(10).to_string(index=False)
-        
-        # Display the first 10 rows in a message box
-        messagebox.showinfo("Data Loaded", f"Data loaded successfully!\n\nFirst 10 rows:\n{first_10_rows}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load data: {e}")
 
+
+# Function to calculate statistics
 def calculate_stats():
     global data, stats
     if data is None:
@@ -82,27 +84,41 @@ def calculate_stats():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to calculate statistics: {e}")
 
-def plot_data():
-        messagebox.showinfo("Success", "Plotting still under developmnt!")
-#    global data
-#    if data is None:
-#        messagebox.showerror("Error", "Load data first!")
-#        return
-#    plot_options = {
-#        "scatter_plot": scatter_var.get(),
-#        "histogram": hist_var.get(),
-#        "save_pdf": save_pdf_var.get(),
-#    }
-#    try:
-#        plot_batch(data, plot_options)
-#        messagebox.showinfo("Success", "Plots generated successfully!")
-#    except Exception as e:
-#        messagebox.showerror("Error", f"Failed to plot data: {e}")
+
+# Function to generate PDF report
+def generate_report():
+    global data, stats
+
+    if data is None or stats is None:
+        messagebox.showerror("Error", "Please load data and calculate statistics first.")
+        return
+
+    # Get file name and path
+    file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+    if not file_path:
+        return
+
+    # Get selected plot options
+    selected_plots = {
+        "JV": jv_var.get(),
+        "Box+Scatter": box_var.get(),
+        "EQE": eqe_var.get(),
+        "MPP": mpp_var.get(),
+        "Table": table_var.get(),
+    }
+
+    try:
+        # Generate the PDF report
+        generate_pdf_report(data, stats, selected_plots, file_path, nomad_url, token)
+        messagebox.showinfo("Success", f"PDF report saved to: {file_path}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to generate report: {e}")
+
 
 # Create main application window
 root = tk.Tk()
 root.title("Data Analysis GUI")
-root.geometry("600x500")
+root.geometry("600x600")
 
 # Login Section
 tk.Label(root, text="NOMAD Login", font=("Helvetica", 12, "bold")).pack(pady=5)
@@ -128,22 +144,26 @@ file_path_label = tk.Label(root, text="No file selected", fg="gray")
 file_path_label.pack()
 
 # Data and Statistics Buttons
-tk.Button(root, text="Load Data", command=load_data).pack(pady=10)
+tk.Button(root, text="Load corresponding Data from NOMAD OASIS", command=load_data).pack(pady=10)
 tk.Button(root, text="Calculate Statistics", command=calculate_stats).pack(pady=10)
 
-# Plotting Options Section
-tk.Label(root, text="Plot Options", font=("Helvetica", 12, "bold")).pack(pady=10)
+# Plot Selection Section
+tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).pack(pady=10)
 
-scatter_var = tk.BooleanVar(value=True)
-hist_var = tk.BooleanVar(value=False)
-save_pdf_var = tk.BooleanVar(value=False)
+jv_var = tk.BooleanVar(value=True)
+box_var = tk.BooleanVar(value=True)
+eqe_var = tk.BooleanVar(value=False)
+mpp_var = tk.BooleanVar(value=False)
+table_var = tk.BooleanVar(value=True)
 
-tk.Checkbutton(root, text="Scatter Plot", variable=scatter_var).pack()
-tk.Checkbutton(root, text="Histogram", variable=hist_var).pack()
-tk.Checkbutton(root, text="Save as PDF", variable=save_pdf_var).pack()
+tk.Checkbutton(root, text="JV Curves", variable=jv_var).pack()
+tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).pack()
+tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).pack()
+tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).pack()
+tk.Checkbutton(root, text="Data Table", variable=table_var).pack()
 
-# Plot Button
-tk.Button(root, text="Plot Batch", command=plot_data).pack(pady=20)
+# Report Generation Button
+tk.Button(root, text="Generate Report", command=generate_report).pack(pady=20)
 
 # Run the application
 root.mainloop()

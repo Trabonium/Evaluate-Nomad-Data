@@ -92,7 +92,7 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, no
 
 def get_specific_data_of_sample(sample_id, entry_type, nomad_url, token, with_meta=False):
     # collect the results of the sample, in this case it are all the annealing temperatures
-    entry_id = get_entryid(sample_id)
+    entry_id = get_entryid(sample_id, nomad_url, token)
 
     query = {
         'required': {
