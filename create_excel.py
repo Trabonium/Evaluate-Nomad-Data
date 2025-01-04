@@ -79,7 +79,7 @@ class ExperimentExcelBuilder:
                 steps.extend(["UV-Ozone Time [s]"])
             return steps
 
-        if process_name == "Spin Coating" or process_name == "Slot Die Coating":
+        if process_name == "Spin Coating" or process_name == "Slot Die Coating" or process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
             steps = ["Material name", "Layer type", "Tool/GB name",]
             # Add solvent steps
             for i in range(1, config.get('solvents', 0) + 1):
@@ -110,6 +110,12 @@ class ExperimentExcelBuilder:
                 steps.extend(["Solution volume [um]", "Flow rate [ul/min]", "Head gap [mm]", "Speed [mm/s]",
                               "Air knife angle [°]",
                              "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]"])
+            
+            elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
+                steps.extend(["Printhead name", "Number of Nozzles", "Droplet density [dpi]", "Quality factor x", "Quality factor y", 
+                              "Printhead Speed [mm/s]", "Droplet per second [1/s]", "Droplet volume [pl]",
+                              ])
+            
             # Add annealing steps
             steps.extend(["Annealing time [min]", "Annealing temperature [°C]",
                          "Annealing athmosphere", "Notes"])  # Added DB 2024-11-28 Atm
@@ -160,9 +166,11 @@ process_config = {
                                   "Substrate conductive layer"]},
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
-    # Default values # Added DB 2024-11-28 spinsteps
-    "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1},
+    
+    "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1}, # Default values # Added DB 2024-11-28 spinsteps
     "Slot Die Coating": {"solvents": 1, "solutes": 1},  # Default values
+    "Inkjet Printing": {"solvents": 1, "solutes": 1},  #Added DB2025-01-04 Printing
+    
     "Evaporation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]",
                               "Source temperature start[°C]", "Source temperature end[°C]", "Substrate temperature [°C]", "Thickness [nm]",
                               "Rate [angstrom/s]", "Tooling factor", "Notes"]},  # Added DB 2024-11-29 many parameters #Could also be called Sublimation instead of Evaporation
