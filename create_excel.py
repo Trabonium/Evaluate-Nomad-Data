@@ -106,14 +106,18 @@ class ExperimentExcelBuilder:
                     steps.extend(["Gas", "Gas quenching start time [s]", "Gas quenching duration [s]", "Gas quenching flow rate [ml/s]", "Gas quenching pressure [bar]",
                                   "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Nozzle shape", "Nozzle size [mm²]"])  # Added DB 2024-11-29
 
+                if config.get("vacuumquenching", False): # Added DB 2025-01-04
+                    steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
+                                    ])  
+
             elif process_name == "Slot Die Coating":
                 steps.extend(["Solution volume [um]", "Flow rate [ul/min]", "Head gap [mm]", "Speed [mm/s]",
-                              "Air knife angle [°]",
-                             "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]"])
+                              "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]"])
             
             elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
-                steps.extend(["Printhead name", "Number of Nozzles", "Droplet density [dpi]", "Quality factor x", "Quality factor y", 
-                              "Printhead Speed [mm/s]", "Droplet per second [1/s]", "Droplet volume [pl]",
+                steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", "Printed area [mm²]",
+                              "Droplet per second [1/s]", "Droplet volume [pl]", "Ink reservoir pressure [bar]", "Table temperature [°C]", 
+                              "Nozzle temperature [°C]", "rel. humidity [%]" 
                               ])
             
             # Add annealing steps
@@ -167,10 +171,12 @@ process_config = {
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
+    "Dip Coating": {"steps": ["Material name", "Layer type", "Tool/GB name",  "Solvent name", "Solvent volume [uL]",
+                              "Solute type", "Solute concentration [mM]", "Dipping duration [s]"]}, #Added DB2025-01-04 Dip Coating
     "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1}, # Default values # Added DB 2024-11-28 spinsteps
     "Slot Die Coating": {"solvents": 1, "solutes": 1},  # Default values
     "Inkjet Printing": {"solvents": 1, "solutes": 1},  #Added DB2025-01-04 Printing
-    
+
     "Evaporation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]",
                               "Source temperature start[°C]", "Source temperature end[°C]", "Substrate temperature [°C]", "Thickness [nm]",
                               "Rate [angstrom/s]", "Tooling factor", "Notes"]},  # Added DB 2024-11-29 many parameters #Could also be called Sublimation instead of Evaporation
