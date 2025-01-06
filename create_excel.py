@@ -168,6 +168,7 @@ process_config = {
     "Experiment Info": {"steps": ["Date", "Project_Name", "Batch", "Subbatch", "Sample", "Nomad ID", "Variation",
                                   "Sample dimension", "Sample area [cm^2]", "Substrate material",
                                   "Substrate conductive layer"]},
+    "Multijunction Info": {"steps": ["Number of junctions", "Bottom Cell Name", "Recombination Layer"]}, #Added DB2025-01-06 Multijunction Info
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
