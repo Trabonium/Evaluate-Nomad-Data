@@ -127,6 +127,8 @@ def plot_EQE_curves(result_df,nomad_url, token):
         #Relevant arrays
         wavelength_array = eqe_data[0]['eqe_data'][0]['wavelength_array']
         eqe_array = eqe_data[0]['eqe_data'][0]['eqe_array']
+        #eqe_data[0]['eqe_data'][0]['integrated_jsc']
+        #eqe_data[0]['eqe_data'][0]['bandgap_eqe']
         #Plot
         ax.plot(wavelength_array, eqe_array, label=f"{row['category']}", color=colors[index])
         print(row[f'maximum_efficiency_id'])

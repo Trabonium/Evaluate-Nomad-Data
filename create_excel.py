@@ -219,21 +219,21 @@ process_config = {
 #]
 
 
-# Process for Spinbot gasquenched
-process_sequence = [
-    {"process": "Experiment Info"},
-    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
-    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
-    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 5, "spinsteps": 2, "gasquenching": True}},  # PSK
-    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
-    {"process": "Evaporation"},  # Passivation Evap
-    {"process": "Evaporation"},  # C60
-    {"process": "Evaporation"},  # BCP
-    {"process": "Evaporation"}   # Ag
-]
+## Process for Spinbot gasquenched
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 5, "spinsteps": 2, "gasquenching": True}},  # PSK
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "Evaporation"}   # Ag
+#]
 
 # Process for Hybrid
-# Process_sequence = [
+# process_sequence = [
 #   {"process": "Experiment Info"},
 #   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
@@ -246,6 +246,21 @@ process_sequence = [
 #   {"process": "ALD"},            #SnO2
 #   {"process": "Evaporation"}     #Ag
 # ]
+
+# Process for Hybrid
+process_sequence = [
+   {"process": "Experiment Info"},
+   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SWashing
+   {"process": "Seq-Evaportation", "config":  {"materials": 3} },                                                 #PSK inorganic
+   {"process": "Seq-Evaportation", "config":  {"materials": 1} },                                                 #PSK organic
+   {"process": "Annealing"},    #Annealing
+   {"process": "Evaporation"},    #C60
+   {"process": "Evaporation"},    #BCP
+   {"process": "ALD"},            #SnO2
+   {"process": "Evaporation"}     #Ag
+]
 
 
 

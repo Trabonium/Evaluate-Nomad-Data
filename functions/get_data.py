@@ -23,6 +23,7 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token):
 
     # Convert the extracted data to a DataFrame
     excel_df = pd.DataFrame(data, columns=["sample_id", "variation"])
+    excel_df = excel_df.dropna(subset=["sample_id"])
 
     df, quantities = get_batch_data(excel_df["sample_id"].unique(), nomad_url, token)
     # Merge with the existing DataFrame on 'sample_id'
