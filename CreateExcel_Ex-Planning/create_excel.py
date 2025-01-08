@@ -115,10 +115,11 @@ class ExperimentExcelBuilder:
                               "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]"])
             
             elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
-                steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", "Printed area [mm²]",
-                              "Droplet per second [1/s]", "Droplet volume [pl]", "Ink reservoir pressure [bar]", "Table temperature [°C]", 
-                              "Nozzle temperature [°C]", "rel. humidity [%]" 
-                              ])
+                steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
+                              "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pl]", "Dropping Height [mm]",
+                              "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
+                              "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
+                              ]) # Added DB2025-01-08 more parameters
             
             # Add annealing steps
             steps.extend(["Annealing time [min]", "Annealing temperature [°C]",
@@ -167,8 +168,8 @@ class ExperimentExcelBuilder:
 process_config = {
     "Experiment Info": {"steps": ["Date", "Project_Name", "Batch", "Subbatch", "Sample", "Nomad ID", "Variation",
                                   "Sample dimension", "Sample area [cm^2]", "Substrate material",
-                                  "Substrate conductive layer"]},
-    "Multijunction Info": {"steps": ["Number of junctions", "Bottom Cell Name", "Recombination Layer"]}, #Added DB2025-01-06 Multijunction Info
+                                  "Substrate conductive layer", "Notes"]}, # Added DB2025-01-08 Notes
+    "Multijunction Info": {"steps": ["Number of junctions", "Bottom Cell Name", "Recombination Layer", "Notes"]}, #Added DB2025-01-06 Multijunction Info, Added DB2025-01-08 Notes
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
@@ -201,7 +202,7 @@ process_config = {
 
 # Define the sequence of processes with custom configurations
 
-# Process for Daniel Spinbot
+# Process for SJ antisolvent Daniel/Spinbot
 #process_sequence = [
 #    {"process": "Experiment Info"},
 #    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
@@ -219,7 +220,7 @@ process_config = {
 #]
 
 
-## Process for Spinbot gasquenched
+## Process for SJ Spinbot gasquenched Maria
 #process_sequence = [
 #    {"process": "Experiment Info"},
 #    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
@@ -232,12 +233,85 @@ process_config = {
 #    {"process": "Evaporation"}   # Ag
 #]
 
-# Process for Hybrid
-# process_sequence = [
+
+# Process for SJ Vacuum Quenching Hang/Ting
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1,
+#                                            "solutes": 1, "spinsteps": 1, "antisolvent": False}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 2,
+#                                            "solutes": 7, "spinsteps": 2, "vacuumquenching": True}},  # PSK vaccumquenching
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2,
+#                                            "spinsteps": 1, "antisolvent": False}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "ALD"},  # SnO2
+#    {"process": "Evaporation"}  # Ag
+#]
+
+## Process for SJ SD Kristina
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Slot Die Coating", "config":  {"solvents": 1, "solutes": 1}},  # SAM
+#    {"process": "Slot Die Coating", "config":  {"solvents": 2, "solutes": 2}},  # PSK inorganic
+#    {"process": "Slot Die Coating", "config":  {"solvents": 2, "solutes": 2}},  # PSK organic  
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "Evaporation"}  # Ag
+#]
+
+# Process for SJ 2step Ronja
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 4, "spinsteps": 2}},  # PSK inorganic
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 3, "spinsteps": 1}},  # PSK organic 
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "Evaporation"}   # Ag
+#]
+
+
+# Process for SJ Inkjet Raphael Theresa
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+#    {"process": "Inkjet Printing", "config":  {"solvents": 2, "solutes": 2}},               # PSK inorganic
+#    {"process": "Inkjet Printing", "config":  {"solvents": 1, "solutes": 3}},               # PSK organic 
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "Evaporation"}   # Ag
+#]
+
+# Process for SJ HybridInkjet Raphael 
+process_sequence = [
+    {"process": "Experiment Info"},
+    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+    {"process": "Seq-Evaporation", "config":  {"materials": 2} },                          # PSK inorganic
+    {"process": "Inkjet Printing", "config":  {"solvents": 1, "solutes": 3}},               # PSK organic 
+    {"process": "Evaporation"},  # Passivation Evap
+    {"process": "Evaporation"},  # C60
+    {"process": "Evaporation"},  # BCP
+    {"process": "Evaporation"}   # Ag
+]
+
+
+## Process for Hybrid Ronja/Julian
+#process_sequence = [
 #   {"process": "Experiment Info"},
 #   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
-#   {"process": "Seq-Evaportation", "config":  {"materials": 2} },                                                 #PSK inorganic
+#   {"process": "Seq-Evaporation", "config":  {"materials": 2} },                                                  #PSK inorganic
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 3, "spinsteps":1 , "antisolvent": False}},   #PSK organic
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps":1 , "antisolvent": False}},   #Passivation Sol
 #   {"process": "Evaporation"},    #Passivation Evap
@@ -247,20 +321,40 @@ process_config = {
 #   {"process": "Evaporation"}     #Ag
 # ]
 
-# Process for Hybrid
-process_sequence = [
-   {"process": "Experiment Info"},
-   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
-   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
-   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SWashing
-   {"process": "Seq-Evaportation", "config":  {"materials": 3} },                                                 #PSK inorganic
-   {"process": "Seq-Evaportation", "config":  {"materials": 1} },                                                 #PSK organic
-   {"process": "Annealing"},    #Annealing
-   {"process": "Evaporation"},    #C60
-   {"process": "Evaporation"},    #BCP
-   {"process": "ALD"},            #SnO2
-   {"process": "Evaporation"}     #Ag
-]
+
+## Process for Joshua Seq Evap
+#process_sequence = [
+#   {"process": "Experiment Info"},
+#   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
+#   {"process": "Seq-Evaporation", "config":  {"materials": 3} },              #PSK inorganic
+#   {"process": "Evaporation"},                                                #PSK organic
+#   {"process": "Annealing"},      #Annealing
+#   {"process": "Evaporation"},    #C60
+#   {"process": "Evaporation"},    #BCP
+#   {"process": "ALD"},            #SnO2
+#   {"process": "Evaporation"}     #Ag
+#]
+
+
+## Process for Tandem SC Xuzheng Lingyi
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Multijunction Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1,
+#                                            "solutes": 1, "spinsteps": 1, "antisolvent": False}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 2,
+#                                            "solutes": 7, "spinsteps": 2, "antisolvent": True}},  # PSK
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2,
+#                                            "spinsteps": 1, "antisolvent": False}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "ALD"},  # SnO2
+#    {"process": "Evaporation"}  # Ag
+#]
 
 
 
