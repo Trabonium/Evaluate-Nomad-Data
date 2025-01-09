@@ -62,8 +62,9 @@ def generate_pdf_report(df, result_df, include_plots, report_title, nomad_url, t
         # Include Box and Scatter Plots for PCE, FF, Voc, Jsc
         if include_plots.get('Box+Scatter', False):
             metrics = ['efficiency', 'fill_factor', 'open_circuit_voltage', 'short_circuit_current_density']
+            SeparateScanDir = include_plots.get('SeparateScan', False)
             for metric in metrics:
-                fig = plot_box_and_scatter(df, 'variation', metric)
+                fig = plot_box_and_scatter(df, 'variation', metric, SeparateScanDir)
                 pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
                 plt.close(fig)
 

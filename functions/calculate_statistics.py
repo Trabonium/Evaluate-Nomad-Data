@@ -7,6 +7,8 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 def calculate_statistics(df):    
 
+    df = df.dropna(subset=['efficiency'])
+
     result_df = pd.DataFrame(columns=['category',
                                       'standard_deviation',
                                       'median',
@@ -31,7 +33,7 @@ def calculate_statistics(df):
         temp_df = pd.DataFrame({
             'category': [category],
             'standard_deviation': [np.round(std_dev,2)],
-            'median': [np.round(med_eff)],
+            'median': [np.round(med_eff,2)],
             'closest_median': [closest_med_eff_value[0]],
             'closest_median_id': [med_id],
             'maximum_efficiency': [max_eff],

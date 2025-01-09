@@ -54,9 +54,23 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, quantities, jv_quantity):
-    # Define a color palette for the groups
-    colors = plt.cm.viridis(np.linspace(0, 1, len(df['variation'].unique())))
+def plot_box_and_scatter(df, quantities, jv_quantity, SeparateScanDir=False):
+    # Define the base color palette for unique variations
+    base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df['variation'].unique())))
+
+    if SeparateScanDir:
+        # Extend the colors for 'forward' groups by shifting brightness
+        bw_colors = base_colors
+        fw_colors = [plt.cm.viridis(min(1, color[0] + 0.0001)) for color in base_colors]
+
+        # Combine backwards and forwards colors interleaved
+        colors = []
+        for bw_color, fw_color in zip(bw_colors, fw_colors):
+            colors.append(bw_color)  # Backward color
+            colors.append(fw_color)  # Forward color
+    else:
+        # Use only the base color palette
+        colors = base_colors
     
     # Define Y-Axis Labels
     quantity_labels = {
@@ -69,28 +83,73 @@ def plot_box_and_scatter(df, quantities, jv_quantity):
     fig, ax = plt.subplots(figsize=(10, 5))
 
     # Sort the unique variation groups first to ensure consistent order
-    sorted_groups = sorted(df['variation'].unique())
+    # Define grouping logic based on the SeparateScanDir flag
+    if SeparateScanDir:
+        sorted_variations = sorted(df['variation'].unique())
+        sorted_groups = [
+            f"{group}_bw" if i % 2 == 0 else f"{group}_fw"
+            for group in sorted_variations
+            for i in range(2)
+            ]
+    else:
+        sorted_groups = sorted(df['variation'].unique())
+
+
     positions = [i + 1 for i in range(len(sorted_groups))]  # Define positions for each group
 
     # Draw the box plot without fliers and with colors
     medianprops = dict(color='red')
     for i, (group, color) in enumerate(zip(sorted_groups, colors)):
-        group_data = df[df['variation'] == group][jv_quantity].dropna()
+        if SeparateScanDir:
+            # Separate data into backward and forward scan directions
+            if group.endswith("_bw"):
+                base_group = group[:-3]  # Remove "_bw" suffix
+                group_data = df[
+                    (df['variation'] == base_group) & 
+                    (df['scan_direction'] == 'backwards')
+                ][jv_quantity].dropna()
+            elif group.endswith("_fw"):
+                base_group = group[:-3]  # Remove "_fw" suffix
+                group_data = df[
+                    (df['variation'] == base_group) & 
+                    (df['scan_direction'] == 'forwards')
+                ][jv_quantity].dropna()
+        else:
+            # Group data by variation only
+            group_data = df[df['variation'] == group][jv_quantity].dropna()
+
+
         box = ax.boxplot(group_data, positions=[positions[i]], showmeans=False, showfliers=False, widths=0.5, patch_artist=True,
                           boxprops=dict(facecolor=color, color='black'),
                           medianprops=medianprops)
 
     # Overlay the scatter plot with black points
     for i, group in enumerate(sorted_groups):
-        group_data = df[df['variation'] == group]
+        if SeparateScanDir:
+            # Separate data into backward and forward scan directions
+            if group.endswith("_bw"):
+                base_group = group[:-3]  # Remove "_bw" suffix
+                group_data = df[
+                    (df['variation'] == base_group) & 
+                    (df['scan_direction'] == 'backwards')
+                ][jv_quantity].dropna()
+            elif group.endswith("_fw"):
+                base_group = group[:-3]  # Remove "_fw" suffix
+                group_data = df[
+                    (df['variation'] == base_group) & 
+                    (df['scan_direction'] == 'forwards')
+                ][jv_quantity].dropna()
+        else:
+            # Group data by variation only
+            group_data = df[df['variation'] == group][jv_quantity].dropna()
         # Add jitter to x positions
         jittered_x = np.random.normal(loc=positions[i], scale=0.05, size=len(group_data))
-        ax.scatter(jittered_x, group_data[jv_quantity], color='black', alpha=1, zorder=3)
+        ax.scatter(jittered_x, group_data, color='black', alpha=1, zorder=3)
 
     # Axis label and Ticks
     ax.set_ylabel(f"{quantity_labels[jv_quantity]}", size=16)
     ax.set_xticks(positions)
-    ax.set_xticklabels(sorted_groups, size=14)
+    ax.set_xticklabels(sorted_groups, size=14, rotation=45 if len(sorted_groups) > 5 else 0,  ha='right')
     ax.set_yticks(ax.get_yticks())
     ax.tick_params(axis='both', labelsize=14)
 

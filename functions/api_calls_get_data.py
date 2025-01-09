@@ -42,7 +42,7 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, no
         key_1 = [key_1]
     # collect the results of the sample, in this case it are all the annealing temperatures
     df_q = pd.DataFrame(columns=["entry_id","sample_id"]+quantities)
-    df_jv = pd.DataFrame(columns=["entry_id"]+jv_quantities)
+    df_jv = pd.DataFrame(columns=["entry_id"]+["scan_direction"]+jv_quantities)
 
     for sample_ids in samples_of_batch:
         sample_id = sample_ids[1]
@@ -77,6 +77,10 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, no
             if "JVmeasurement" in link["archive"]["metadata"]["entry_type"]:
                 row = {"entry_id": sample_id}
                 for curve in link["archive"]["data"]["jv_curve"]:
+                    row["scan_direction"] = (  #scan direction
+                        "backwards" if curve["cell_name"] == "Current density [1] [mA/cm^2]" else
+                        "forwards" if curve["cell_name"] == "Current density [2] [mA/cm^2]" else
+                        None)  #scan direction
                     for quantity in jv_quantities:
                         row.update({quantity: curve.get(quantity)})
 

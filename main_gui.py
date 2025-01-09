@@ -102,6 +102,7 @@ def generate_report():
     selected_plots = {
         "JV": jv_var.get(),
         "Box+Scatter": box_var.get(),
+        "SeparateScan": separate_scan_var.get(), 
         "EQE": eqe_var.get(),
         "MPP": mpp_var.get(),
         "Table": table_var.get(),
@@ -152,12 +153,14 @@ tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).p
 
 jv_var = tk.BooleanVar(value=True)
 box_var = tk.BooleanVar(value=True)
+separate_scan_var = tk.BooleanVar(value=False)
 eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 
 tk.Checkbutton(root, text="JV Curves", variable=jv_var).pack()
 tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).pack()
+tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).pack()  
 tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).pack()
 tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).pack()
 tk.Checkbutton(root, text="Data Table", variable=table_var).pack()

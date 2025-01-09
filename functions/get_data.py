@@ -59,10 +59,10 @@ def get_batch_data(sample_ids, nomad_url, token):
     df = get_quantity_over_jv(samples_of_batch, key, quantities, jv_quantities, nomad_url, token)
     
     #Extract Information from ID
-    df['last_digit'] = df['sample_id'].str.extract('(\d)$').astype(int)[0]
-    df['category'] = df['sample_id'].str.split('_').str[4]
-    df['batch_name'] = df['sample_id'].str.split('_').str[3]
-    df['batch_date'] = df['sample_id'].str.split('_').str[2]
+    #df['last_digit'] = df['sample_id'].str.extract('(\d)$').astype(int)[0]
+    #df['category'] = df['sample_id'].str.split('_').str[4]
+    #df['batch_name'] = df['sample_id'].str.split('_').str[3]
+    #df['batch_date'] = df['sample_id'].str.split('_').str[2]
 
     # Data cleaning remove shunted or somehow damaged devices using filters
     df = df[df['fill_factor'] >= 0.5]
