@@ -110,9 +110,10 @@ class ExperimentExcelBuilder:
                     steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
                                     ])  
 
-            elif process_name == "Slot Die Coating":
+            elif process_name == "Slot Die Coating": #Added DB2025-01-10 Added parameters
                 steps.extend(["Solution volume [um]", "Flow rate [ul/min]", "Head gap [mm]", "Speed [mm/s]",
-                              "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]"])
+                              "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]",
+                              "Nozzle Height [mm]", "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
             
             elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
                 steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
@@ -256,6 +257,7 @@ process_config = {
 #    {"process": "Experiment Info"},
 #    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
 #    {"process": "Slot Die Coating", "config":  {"solvents": 1, "solutes": 1}},  # SAM
+#    {"process": "Evaporation"},                                                 # SAM Evap
 #    {"process": "Slot Die Coating", "config":  {"solvents": 2, "solutes": 2}},  # PSK inorganic
 #    {"process": "Slot Die Coating", "config":  {"solvents": 2, "solutes": 2}},  # PSK organic  
 #    {"process": "Evaporation"},  # Passivation Evap
