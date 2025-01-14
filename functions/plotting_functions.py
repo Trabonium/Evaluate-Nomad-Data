@@ -54,7 +54,59 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, quantities, jv_quantity, SeparateScanDir=False):
+def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
+
+    unique_variations = df['variation'].unique()
+
+    # Daten filtern und organisieren
+    filtered_data = [[], [], [], [], [], [], [], []] 
+
+    for i, var in enumerate(unique_variations):
+        filtered_data[0].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'efficiency'].tolist())
+        filtered_data[1].append(df.loc[(df['scan_direction'] == 'forwards') & (df['variation'] == var), 'efficiency'].tolist())
+        filtered_data[2].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'fill_factor'].tolist())
+        filtered_data[3].append(df.loc[(df['scan_direction'] == 'forwards') & (df['variation'] == var), 'fill_factor'].tolist())
+        filtered_data[4].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'short_circuit_current_density'].tolist())
+        filtered_data[5].append(df.loc[(df['scan_direction'] == 'forwards') & (df['variation'] == var), 'short_circuit_current_density'].tolist())
+        filtered_data[6].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'open_circuit_voltage'].tolist())
+        filtered_data[7].append(df.loc[(df['scan_direction'] == 'forwards') & (df['variation'] == var), 'open_circuit_voltage'].tolist())
+
+    # Subplot erstellen
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # Seitenverhältnis anpassen
+    axes = axes.flatten()
+
+    # Achsentitel
+    yachsenname = ['PCE [%]', 'FF [%]', r'J$_{\text{sc}}$ [mA/cm$^2$]', r'V$_{\text{oc}}$ [V]']
+    legendenboolean = True
+    for i in range(0, 8, 2):
+        data = []
+        for k, (a, b) in enumerate(zip(filtered_data[i], filtered_data[i + 1])):
+            data.extend([(unique_variations[k], value, 'reverse') for value in a])
+            data.extend([(unique_variations[k], value, 'forwards') for value in b])
+
+        dataframe = pd.DataFrame(data, columns=['Gruppe', 'Wert', 'Richtung'])
+
+        ax = axes[int(i / 2)]
+        sns.boxplot(x='Gruppe', y='Wert', hue='Richtung', data=dataframe, ax=ax, legend = legendenboolean)
+        sns.stripplot(x='Gruppe', y='Wert', hue='Richtung', data=dataframe, dodge=True, jitter=True,
+                      palette='dark:black', alpha=0.5, legend=False, ax=ax)
+        legendenboolean = False
+        # Achsentitel und Anpassungen
+        ax.set_ylabel(yachsenname[int(i / 2)], fontsize=18, labelpad=10)
+        ax.set_xticks(range(len(unique_variations)))
+        ax.set_xticklabels(unique_variations, fontsize=14)
+        ax.set_xlabel("")
+        ax.tick_params(axis='y', labelsize=14)
+        ax.grid(axis='y', linestyle='--', alpha=0.6)
+
+    # Legende nur für den ersten Subplot
+    handles, labels = axes[0].get_legend_handles_labels()
+    axes[0].legend(handles, labels, loc='upper right', fontsize=12)
+
+    plt.tight_layout()
+    return fig
+
+    '''
     # Define the base color palette for unique variations
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df['variation'].unique())))
 
@@ -216,7 +268,7 @@ def plot_EQE_curves(result_df,nomad_url, token):
     #fig.savefig(f"{curve_type}.png", dpi=300, transparent=True, bbox_inches='tight')
 
     return fig
-
+    '''
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
