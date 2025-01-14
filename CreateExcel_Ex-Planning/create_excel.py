@@ -79,7 +79,7 @@ class ExperimentExcelBuilder:
                 steps.extend(["UV-Ozone Time [s]"])
             return steps
 
-        if process_name == "Spin Coating" or process_name == "Slot Die Coating" or process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
+        if process_name in ["Spin Coating", "Dip Coating", "Slot Die Coating", "Inkjet Printing"]: #Added DB2025-01-04 Printing
             steps = ["Material name", "Layer type", "Tool/GB name",]
             # Add solvent steps
             for i in range(1, config.get('solvents', 0) + 1):
@@ -89,7 +89,7 @@ class ExperimentExcelBuilder:
                 steps.extend([f"Solute {i} type", f"Solute {i} Concentration [mM]"])
             # Add remaining steps based on the process type
             if process_name == "Spin Coating":
-                steps.extend(["Solution volume [um]", "Spin Delay [s]"])
+                steps.extend(["Solution volume [uL]", "Spin Delay [s]"])
                 if config.get('spinsteps', 0) == 1:  # Added DB 2024-11-28 spinsteps
                     steps.extend(
                         ["Rotation speed [rpm]", "Rotation time [s]", "Acceleration [rpm/s]"])
@@ -100,7 +100,7 @@ class ExperimentExcelBuilder:
 
                 if config.get("antisolvent", False):
                     steps.extend(["Anti solvent name", "Anti solvent volume [ml]", "Anti solvent dropping time [s]",
-                                  "Anti solvent dropping speed [ul/s]", "Anti solvent dropping heigt [mm]"])  # Added DB 2024-11-28 speed and height
+                                  "Anti solvent dropping speed [uL/s]", "Anti solvent dropping heigt [mm]"])  # Added DB 2024-11-28 speed and height
 
                 if config.get("gasquenching", False):
                     steps.extend(["Gas", "Gas quenching start time [s]", "Gas quenching duration [s]", "Gas quenching flow rate [ml/s]", "Gas quenching pressure [bar]",
@@ -111,13 +111,16 @@ class ExperimentExcelBuilder:
                                     ])  
 
             elif process_name == "Slot Die Coating": #Added DB2025-01-10 Added parameters
-                steps.extend(["Solution volume [um]", "Flow rate [ul/min]", "Head gap [mm]", "Speed [mm/s]",
+                steps.extend(["Solution volume [um]", "Flow rate [uL/min]", "Head gap [mm]", "Speed [mm/s]",
                               "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]",
                               "Nozzle Height [mm]", "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
+                
+            elif process_name == "Dip Coating":
+                steps.extend(["Dipping duration [s]"]) #Added DB2025-01-10 Dip Coating
             
             elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
                 steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
-                              "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pl]", "Dropping Height [mm]",
+                              "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pL]", "Dropping Height [mm]",
                               "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
                               "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
                               ]) # Added DB2025-01-08 more parameters
@@ -174,8 +177,7 @@ process_config = {
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
-    "Dip Coating": {"steps": ["Material name", "Layer type", "Tool/GB name",  "Solvent name", "Solvent volume [uL]",
-                              "Solute type", "Solute concentration [mM]", "Dipping duration [s]"]}, #Added DB2025-01-04 Dip Coating
+    "Dip Coating": {"solvents": 1, "solutes": 1}, #Added DB2025-01-10 Adapted
     "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1}, # Default values # Added DB 2024-11-28 spinsteps
     "Slot Die Coating": {"solvents": 1, "solutes": 1},  # Default values
     "Inkjet Printing": {"solvents": 1, "solutes": 1},  #Added DB2025-01-04 Printing
@@ -266,13 +268,14 @@ process_config = {
 #    {"process": "Evaporation"}  # Ag
 #]
 
-# Process for SJ 2step Ronja
+## Process for SJ 2step Ronja
 #process_sequence = [
 #    {"process": "Experiment Info"},
-#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 3}},
 #    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
 #    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 4, "spinsteps": 2}},  # PSK inorganic
-#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 3, "spinsteps": 1}},  # PSK organic 
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 5, "spinsteps": 1}},  # PSK organic 
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 0, "spinsteps": 1}},  # PSK Washing
 #    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
 #    {"process": "Evaporation"},  # Passivation Evap
 #    {"process": "Evaporation"},  # C60
@@ -281,7 +284,7 @@ process_config = {
 #]
 
 
-# Process for SJ Inkjet Raphael Theresa
+## Process for SJ Inkjet Raphael Theresa
 #process_sequence = [
 #    {"process": "Experiment Info"},
 #    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
@@ -294,18 +297,40 @@ process_config = {
 #    {"process": "Evaporation"}   # Ag
 #]
 
-# Process for SJ HybridInkjet Raphael 
-process_sequence = [
-    {"process": "Experiment Info"},
-    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
-    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
-    {"process": "Seq-Evaporation", "config":  {"materials": 2} },                          # PSK inorganic
-    {"process": "Inkjet Printing", "config":  {"solvents": 1, "solutes": 3}},               # PSK organic 
-    {"process": "Evaporation"},  # Passivation Evap
-    {"process": "Evaporation"},  # C60
-    {"process": "Evaporation"},  # BCP
-    {"process": "Evaporation"}   # Ag
-]
+## Process for SJ HybridInkjet Raphael 
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM Washing
+#    {"process": "Seq-Evaporation", "config":  {"materials": 2} },                          # PSK inorganic
+#    {"process": "Inkjet Printing", "config":  {"solvents": 1, "solutes": 3}},               # PSK organic 
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#   {"process": "ALD"},            #SnO2
+#    {"process": "Evaporation"}   # Ag
+#]
+
+## Process for Tandem HybridInkjet Raphael 
+#process_sequence = [
+#    {"process": "Experiment Info"},
+#    {"process": "Multijunction Info"},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Sputtering"},  #NiO
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
+#    {"process": "Seq-Evaporation", "config":  {"materials": 2} },                          # PSK inorganic
+#    {"process": "Inkjet Printing", "config":  {"solvents": 1, "solutes": 3}},               # PSK organic 
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
+#    {"process": "Evaporation"},  # Passivation Evap
+#    {"process": "Evaporation"},  # C60
+#    {"process": "Evaporation"},  # BCP
+#    {"process": "ALD"},            #SnO2
+#    {"process": "Sputtering"},      #IZO
+#    {"process": "Evaporation"},  # Ag
+#    {"process": "Evaporation"}  # ARC
+#]
 
 
 ## Process for Hybrid Ronja/Julian
@@ -313,8 +338,9 @@ process_sequence = [
 #   {"process": "Experiment Info"},
 #   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 0, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
 #   {"process": "Seq-Evaporation", "config":  {"materials": 2} },                                                  #PSK inorganic
-#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 3, "spinsteps":1 , "antisolvent": False}},   #PSK organic
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 4, "spinsteps":1 , "antisolvent": False}},   #PSK organic
 #   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps":1 , "antisolvent": False}},   #Passivation Sol
 #   {"process": "Evaporation"},    #Passivation Evap
 #   {"process": "Evaporation"},    #C60
@@ -345,17 +371,19 @@ process_sequence = [
 #    {"process": "Experiment Info"},
 #    {"process": "Multijunction Info"},
 #    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
-#    {"process": "Spin Coating", "config":  {"solvents": 1,
-#                                            "solutes": 1, "spinsteps": 1, "antisolvent": False}},  # SAM
-#    {"process": "Spin Coating", "config":  {"solvents": 2,
-#                                            "solutes": 7, "spinsteps": 2, "antisolvent": True}},  # PSK
-#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2,
-#                                            "spinsteps": 1, "antisolvent": False}},  # Passivation Sol
+#    {"process": "Sputtering"},  
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},  # NiO np
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1, "antisolvent": False}},  # SAM
+#    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 7, "spinsteps": 2, "antisolvent": True}},  # PSK
+#    {"process": "ALD"},           # AlO Passivation
+#    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1, "antisolvent": False}},  # Passivation Sol
 #    {"process": "Evaporation"},  # Passivation Evap
 #    {"process": "Evaporation"},  # C60
 #    {"process": "Evaporation"},  # BCP
-#    {"process": "ALD"},  # SnO2
-#    {"process": "Evaporation"}  # Ag
+#    {"process": "ALD"},           # SnO2
+#    {"process": "Sputtering"},      #IZO
+#    {"process": "Evaporation"},  # Ag
+#    {"process": "Evaporation"}  # ARC
 #]
 
 
