@@ -65,10 +65,10 @@ def get_batch_data(sample_ids, nomad_url, token):
     #df['batch_date'] = df['sample_id'].str.split('_').str[2]
 
     # Data cleaning remove shunted or somehow damaged devices using filters
-    df = df[df['fill_factor'] >= 0]
-    df = df[df['open_circuit_voltage'] >= 0]
-    df = df[df['short_circuit_current_density'] <= 0]
-    df = df[df["fill_factor"] <= 0]
+    #df = df[df['fill_factor'] >= 0.5]
+    #df = df[df['open_circuit_voltage'] >= 1]
+    #df = df[df['short_circuit_current_density'] <= 30]
+    #df = df[df["fill_factor"] <= 1]
 
 
     return df, quantities
