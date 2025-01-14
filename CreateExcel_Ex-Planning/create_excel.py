@@ -113,7 +113,7 @@ class ExperimentExcelBuilder:
             elif process_name == "Slot Die Coating": #Added DB2025-01-10/14 Added parameters/ coating run
                 steps.extend(["Coating run", "Solution volume [um]", "Flow rate [uL/min]", "Head gap [mm]", "Speed [mm/s]",
                               "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]",
-                              "Nozzle Height [mm]", "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
+                              "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
                 
             elif process_name == "Dip Coating":
                 steps.extend(["Dipping duration [s]"]) #Added DB2025-01-10 Dip Coating
