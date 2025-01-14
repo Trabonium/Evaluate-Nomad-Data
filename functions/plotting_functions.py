@@ -219,6 +219,8 @@ def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
     ax.patch.set_facecolor('none')
 
     return fig
+'''
+    
 
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
@@ -268,7 +270,7 @@ def plot_EQE_curves(result_df,nomad_url, token):
     #fig.savefig(f"{curve_type}.png", dpi=300, transparent=True, bbox_inches='tight')
 
     return fig
-    '''
+    
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
