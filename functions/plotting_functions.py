@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from functions.api_calls_get_data import get_specific_data_of_sample
-
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
@@ -14,16 +14,17 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
     
     # Set the color cycle for the axes
     ax.set_prop_cycle(color=colors)
-    
+    PCE = None
     for index, row in result_df.iterrows():
         jv_data = get_specific_data_of_sample(row[f'{curve_type}_id'], "JVmeasurement", nomad_url, token)
         for cell in jv_data:
             for i in range(2):
+                PCE = cell["jv_curve"][i]["efficiency"]
                 if cell["jv_curve"][i]["efficiency"] == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
                         ax.plot(cell["jv_curve"][i]["voltage"], \
                                  cell["jv_curve"][i]["current_density"], \
-                                 label=f"{row['category']}")
+                                 label=f"{row['category']}: {round(PCE,2)}%")
                         print(cell["name"])
                         break
 
@@ -50,7 +51,6 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
     #fig.savefig(f"{curve_type}.png", dpi=300, transparent=True, bbox_inches='tight')
 
     return fig
-
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
