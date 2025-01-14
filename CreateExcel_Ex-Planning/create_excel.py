@@ -110,16 +110,16 @@ class ExperimentExcelBuilder:
                     steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
                                     ])  
 
-            elif process_name == "Slot Die Coating": #Added DB2025-01-10 Added parameters
-                steps.extend(["Solution volume [um]", "Flow rate [uL/min]", "Head gap [mm]", "Speed [mm/s]",
+            elif process_name == "Slot Die Coating": #Added DB2025-01-10/14 Added parameters/ coating run
+                steps.extend(["Coating run", "Solution volume [um]", "Flow rate [uL/min]", "Head gap [mm]", "Speed [mm/s]",
                               "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]",
                               "Nozzle Height [mm]", "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
                 
             elif process_name == "Dip Coating":
                 steps.extend(["Dipping duration [s]"]) #Added DB2025-01-10 Dip Coating
             
-            elif process_name == "Inkjet Printing": #Added DB2025-01-04 Printing
-                steps.extend(["Printhead name", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
+            elif process_name == "Inkjet Printing": #Added DB2025-01-14 Printing run
+                steps.extend(["Printhead name", "Printing run", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
                               "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pL]", "Dropping Height [mm]",
                               "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
                               "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
