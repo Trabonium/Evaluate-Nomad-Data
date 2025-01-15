@@ -7,13 +7,16 @@ from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
 from functions.plotting_functions import plot_box_and_scatter, plot_JV_curves, plot_EQE_curves, plot_MPP_curves
 from functions.generate_report import generate_pdf_report
-from functions.PowerPoint import extract_images_from_pdf, duplicate_slide, insert_images_into_ppt, Beginn
+from functions.PowerPoint import process_pdf_to_ppt, create_presentation, extract_images_from_pdf
 
 # Initialize variables
 selected_file_path = None
 data = None
 stats = None
 token = None
+global directory, file_name
+directory = None
+file_name = None
 
 # Global variables for URL and token
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
@@ -88,7 +91,7 @@ def calculate_stats():
 
 # Function to generate PDF report
 def generate_report():
-    global data, stats
+    global data, stats, directory, file_name
 
     if data is None or stats is None:
         messagebox.showerror("Error", "Please load data and calculate statistics first.")
@@ -111,11 +114,18 @@ def generate_report():
 
     try:
         # Generate the PDF report
-        generate_pdf_report(data, stats, selected_plots, file_path, nomad_url, token)
+        directory, file_name = generate_pdf_report(data, stats, selected_plots, file_path, nomad_url, token)
         messagebox.showinfo("Success", f"PDF report saved to: {file_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to generate report: {e}")
-
+    
+def start_pptx_generation(directory, file_name):
+    messagebox.showinfo("Info", "Please wait while the PowerPoint presentation is being generated...")
+    if not directory or not file_name:
+        messagebox.showerror("Error", "Please generate the PDF report first!")
+    process_pdf_to_ppt(directory, file_name)
+    messagebox.showinfo("Info", "PPTX presentation generated successfully!")
+    return 
 
 # Create main application window
 root = tk.Tk()
@@ -123,34 +133,34 @@ root.title("Data Analysis GUI")
 root.geometry("600x600")
 
 # Login Section
-tk.Label(root, text="NOMAD Login", font=("Helvetica", 12, "bold")).pack(pady=5)
+tk.Label(root, text="NOMAD Login", font=("Helvetica", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=5)
 
 username_label = tk.Label(root, text="Username:")
-username_label.pack()
+username_label.grid(row=1, column=0, sticky="e", padx=5)
 username_entry = tk.Entry(root, width=30)
-username_entry.pack()
+username_entry.grid(row=1, column=1, padx=5, pady=5)
 
 password_label = tk.Label(root, text="Password:")
-password_label.pack()
+password_label.grid(row=2, column=0, sticky="e", padx=5)
 password_entry = tk.Entry(root, width=30, show="*")
-password_entry.pack()
+password_entry.grid(row=2, column=1, padx=5, pady=5)
 
 login_button = tk.Button(root, text="Login", command=login_handler)
-login_button.pack(pady=10)
+login_button.grid(row=3, column=0, columnspan=2, pady=10)
 
 # File Selection Section
-tk.Label(root, text="Excel File Selection", font=("Helvetica", 12, "bold")).pack(pady=10)
+tk.Label(root, text="Excel File Selection", font=("Helvetica", 12, "bold")).grid(row=4, column=0, columnspan=2, pady=10)
 file_select_button = tk.Button(root, text="Select File", command=select_file)
-file_select_button.pack()
+file_select_button.grid(row=5, column=0, columnspan=2)
 file_path_label = tk.Label(root, text="No file selected", fg="gray")
-file_path_label.pack()
+file_path_label.grid(row=6, column=0, columnspan=2, pady=5)
 
 # Data and Statistics Buttons
-tk.Button(root, text="Load corresponding Data from NOMAD OASIS", command=load_data).pack(pady=10)
-tk.Button(root, text="Calculate Statistics", command=calculate_stats).pack(pady=10)
+tk.Button(root, text="Load corresponding Data from NOMAD OASIS", command=load_data).grid(row=7, column=0, columnspan=2, pady=10)
+tk.Button(root, text="Calculate Statistics", command=calculate_stats).grid(row=8, column=0, columnspan=2, pady=10)
 
 # Plot Selection Section
-tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).pack(pady=10)
+tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).grid(row=9, column=0, columnspan=2, pady=10)
 
 jv_var = tk.BooleanVar(value=True)
 box_var = tk.BooleanVar(value=True)
@@ -159,17 +169,21 @@ eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 
+tk.Checkbutton(root, text="JV Curves", variable=jv_var).grid(row=10, column=0, sticky="w")
+tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).grid(row=11, column=0, sticky="w")
+tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).grid(row=12, column=0, sticky="w")
+tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).grid(row=13, column=0, sticky="w")
+tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).grid(row=14, column=0, sticky="w")
+tk.Checkbutton(root, text="Data Table", variable=table_var).grid(row=15, column=0, sticky="w")
 
-tk.Checkbutton(root, text="JV Curves", variable=jv_var).pack()
-tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).pack()
-tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).pack()  
-tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).pack()
-tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).pack()
-tk.Checkbutton(root, text="Data Table", variable=table_var).pack()
+# Buttons in einer Reihe (Generate Report und PPTX)
+generate_report_button = tk.Button(root, text="Generate Report", command=generate_report)
+generate_report_button.grid(row=16, column=0, padx=10, pady=20)
 
-# Report Generation Button
-tk.Button(root, text="Generate Report", command=generate_report).pack(pady=20)
-#print(directory, file_name)
-#tk.Button(root, text="PPTX", command=lambda: PowerPoint(directory, file_name)).pack(pady=21)
+pptx_button = tk.Button(root, text="PPTX", command=lambda: start_pptx_generation(directory, file_name))
+pptx_button.grid(row=16, column=1, padx=10, pady=20)
+
 # Run the application
 root.mainloop()
+
+

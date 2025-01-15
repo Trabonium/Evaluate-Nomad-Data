@@ -2,10 +2,11 @@ import os
 from PIL import Image  # Für die Bildverarbeitung
 from pptx import Presentation
 from pptx.util import Inches
+from fitz import open as fitz_open  # PyMuPDF
+from tkinter import Tk, filedialog
 
 def extract_images_from_pdf(pdf_path, output_folder):
-    from PyMuPDF import open as fitz_open  # PyMuPDF
-
+    """Extrahiert Bilder aus einer PDF-Datei und speichert sie im Ausgabeverzeichnis."""
     pdf_document = fitz_open(pdf_path)
     image_paths = []
 
@@ -29,92 +30,57 @@ def extract_images_from_pdf(pdf_path, output_folder):
     pdf_document.close()
     return image_paths
 
-def duplicate_slide(prs, slide_index):
-    """Dupliziert eine Folie und gibt die neue Folie zurück."""
-    slide = prs.slides[slide_index]
-    slide_layout = slide.slide_layout  # Behalte das Layout der ursprünglichen Folie
 
-    # Neue Folie basierend auf dem gleichen Layout erstellen
-    new_slide = prs.slides.add_slide(slide_layout)
+def create_presentation(image_paths, output_ppt_path):
+    """Erstellt eine PowerPoint-Präsentation und fügt extrahierte Bilder hinzu."""
+    prs = Presentation()
 
-    # Shapes (Inhalte) der Originalfolie kopieren
-    for shape in slide.shapes:
-        if shape.is_placeholder:
-            continue  # Platzhalter überspringen, da sie bereits im Layout enthalten sind
+    # Folie 3 erstellen oder duplizieren
+    slide_layout = prs.slide_layouts[5]  # Leere Folie
+    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 1
+    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 2
+    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 3
 
-        if shape.shape_type == 1:  # Textfeld
-            new_shape = new_slide.shapes.add_textbox(
-                shape.left, shape.top, shape.width, shape.height
-            )
-            new_shape.text = shape.text  # Text kopieren
-        elif shape.shape_type == 13:  # Bild
-            new_slide.shapes.add_picture(
-                shape.image.blob, shape.left, shape.top, shape.width, shape.height
-            )
-        # Füge hier weitere Typen hinzu, wenn nötig
-
-    return new_slide
-
-def insert_images_into_ppt(ppt_path, image_paths, output_ppt_path):
-    prs = Presentation(ppt_path)
-
-    # Sicherstellen, dass mindestens 3 Folien vorhanden sind
-    if len(prs.slides) < 3:
-        slide_layout = prs.slide_layouts[1]
-        for _ in range(3 - len(prs.slides)):
-            prs.slides.add_slide(slide_layout)
-
-    third_slide_index = 2  # Index von Folie 3
-
-    # Definierter Bereich für das Bild (z. B. maximal 5 x 4 Inches)
     max_width = Inches(5)
     max_height = Inches(4)
+    right_edge = Inches(10)  # Rechte Kante der Folie
 
+    # Bilder auf Folie 3 einfügen und duplizieren
     for idx, image_path in enumerate(image_paths):
-        # Bilddimensionen laden
-        with Image.open(image_path) as img:
-            img_width, img_height = img.size
-
-        # Verhältnis berechnen
-        img_ratio = img_width / img_height
-        max_ratio = max_width / max_height
-
-        if img_ratio > max_ratio:
-            new_width = max_width
-            new_height = max_width / img_ratio
-        else:
-            new_height = max_height
-            new_width = max_height * img_ratio
-
-        # Position berechnen (bündig rechts und vertikal zentriert)
-        left = Inches(10) - new_width
-        top = (Inches(7.5) - new_height) / 2
-
-        if idx == 0:
-            # Erstes Bild auf der dritten Folie einfügen
-            third_slide = prs.slides[third_slide_index]
-            third_slide.shapes.add_picture(image_path, left, top, width=new_width, height=new_height)
-        else:
-            # Folie 3 duplizieren und Bild einfügen
-            new_slide = duplicate_slide(prs, third_slide_index)
-            new_slide.shapes.add_picture(image_path, left, top, width=new_width, height=new_height)
+        # Folie 3 einfügen/duplizieren je nach Bildanzahl
+        if idx > 0:
+            slide = prs.slides.add_slide(slide_layout)  # Folie 3 duplizieren
+        left = right_edge - max_width
+        top = (Inches(7.5) - max_height) / 2  # Zentriert
+        slide.shapes.add_picture(image_path, left, top, width=max_width, height=max_height)
 
     prs.save(output_ppt_path)
+    print(f"PowerPoint-Datei wurde gespeichert: {output_ppt_path}")
 
-def Beginn():
-    pdf_path = "your_pdf_file.pdf"  # Pfad zur PDF-Datei
-    ppt_path = "ELN_Training_Taskforce.pptx"  # Pfad zur PowerPoint-Vorlage
-    output_folder = "extracted_images"  # Ordner für extrahierte Bilder
-    output_ppt_path = "output_presentation.pptx"  # Pfad zur gespeicherten Präsentation
 
-    # Sicherstellen, dass der Ausgabeordner existiert
-    os.makedirs(output_folder, exist_ok=True)
+def process_pdf_to_ppt(pdf_path, pdf_filename):
+    """Hauptprozess: Extrahiert Bilder aus der PDF und erstellt eine PowerPoint-Präsentation."""
+    output_folder = os.path.dirname(pdf_path)
 
-    # Bilder aus der PDF extrahieren
-    image_paths = extract_images_from_pdf(pdf_path, output_folder)
+    # Template.pptx laden oder Datei auswählen
+    template_ppt_path = os.path.join(output_folder, "Template.pptx")
+    if not os.path.exists(template_ppt_path):
+        print("Template.pptx nicht gefunden. Bitte wähle die Datei aus.")
+        Tk().withdraw()  # Verhindert, dass das Tkinter-Hauptfenster angezeigt wird
+        template_ppt_path = filedialog.askopenfilename(title="Template.pptx auswählen", filetypes=[("PowerPoint-Dateien", "*.pptx")])
 
-    # Bilder in die PowerPoint-Präsentation einfügen
-    insert_images_into_ppt(ppt_path, image_paths, output_ppt_path)
+    if not template_ppt_path:
+        print("Es konnte keine Template.pptx-Datei gefunden oder ausgewählt werden.")
+        return
 
-    print(f"Präsentation wurde erstellt: {output_ppt_path}")
+    # Extrahieren der Bilder
+    print("Extrahiere Bilder aus der PDF...")
+    image_paths = extract_images_from_pdf(pdf_path+"/"+pdf_filename, output_folder)
+    if not image_paths:
+        print("Keine Bilder in der PDF gefunden.")
+        return
 
+    # Erstellen der PowerPoint-Präsentation
+    output_ppt_path = os.path.join(output_folder, "output_presentation.pptx")
+    print("Erstelle PowerPoint-Präsentation...")
+    create_presentation(image_paths, output_ppt_path)
