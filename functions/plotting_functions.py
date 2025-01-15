@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import math
 from functions.api_calls_get_data import get_specific_data_of_sample
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
@@ -52,14 +53,12 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
     return fig
 
-### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
+def plot_box_and_scatter(df, quantities, SeparateScanDir=False):
+    unique_variations = df['variation'].unique()  # List of variations
 
-    unique_variations = df['variation'].unique()
-
-    # Daten filtern und organisieren
-    filtered_data = [[], [], [], [], [], [], [], []] 
+    # Filter and organize data
+    filtered_data = [[] for _ in range(8)]  # Placeholder for the eight subsets
 
     for i, var in enumerate(unique_variations):
         filtered_data[0].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'efficiency'].tolist())
@@ -71,42 +70,65 @@ def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
         filtered_data[6].append(df.loc[(df['scan_direction'] == 'backwards') & (df['variation'] == var), 'open_circuit_voltage'].tolist())
         filtered_data[7].append(df.loc[(df['scan_direction'] == 'forwards') & (df['variation'] == var), 'open_circuit_voltage'].tolist())
 
-    # Subplot erstellen
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # Seitenverhältnis anpassen
+    # Create subplots
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # Adjust aspect ratio
     axes = axes.flatten()
 
-    # Achsentitel
-    yachsenname = ['PCE [%]', 'FF [%]', r'J$_{\text{sc}}$ [mA/cm$^2$]', r'V$_{\text{oc}}$ [V]']
-    legendenboolean = True
+    # Axis titles
+    y_axis_labels = ['PCE [%]', 'FF [%]', r'J$_{\text{sc}}$ [mA/cm$^2$]', r'V$_{\text{oc}}$ [V]']
+
     for i in range(0, 8, 2):
         data = []
-        for k, (a, b) in enumerate(zip(filtered_data[i], filtered_data[i + 1])):
-            data.extend([(unique_variations[k], value, 'reverse') for value in a])
-            data.extend([(unique_variations[k], value, 'forwards') for value in b])
+        for k, (backward, forward) in enumerate(zip(filtered_data[i], filtered_data[i + 1])):
+            data.extend([(unique_variations[k], value, 'reverse') for value in backward])
+            data.extend([(unique_variations[k], value, 'forwards') for value in forward])
 
-        dataframe = pd.DataFrame(data, columns=['Gruppe', 'Wert', 'Richtung'])
+        dataframe = pd.DataFrame(data, columns=['Group', 'Value', 'Direction'])
 
         ax = axes[int(i / 2)]
-        sns.boxplot(x='Gruppe', y='Wert', hue='Richtung', data=dataframe, ax=ax, legend = legendenboolean)
-        sns.stripplot(x='Gruppe', y='Wert', hue='Richtung', data=dataframe, dodge=True, jitter=True,
-                      palette='dark:black', alpha=0.5, legend=False, ax=ax)
-        legendenboolean = False
-        # Achsentitel und Anpassungen
-        ax.set_ylabel(yachsenname[int(i / 2)], fontsize=18, labelpad=10)
+
+        # Boxplot
+        sns.boxplot(
+            x='Group',
+            y='Value',
+            hue='Direction',
+            data=dataframe,
+            ax=ax
+        )
+        
+        # Stripplot with adjusted colors
+        sns.stripplot(
+            x='Group',
+            y='Value',
+            hue='Direction',
+            data=dataframe,
+            dodge=True,
+            jitter=True,
+            palette='dark:black',
+            alpha=0.5,
+            legend=False,
+            ax=ax
+        )
+
+        # Axis titles and adjustments
+        ax.set_ylabel(y_axis_labels[int(i / 2)], fontsize=18, labelpad=10)
         ax.set_xticks(range(len(unique_variations)))
         ax.set_xticklabels(unique_variations, fontsize=14)
         ax.set_xlabel("")
-        if unique_variations.size > 5:
-            ax.set_xtickslabels(rotation=45, ha='right')
+        if len(unique_variations) > 5:
+            ax.set_xticklabels(unique_variations, rotation=45, ha='right')
         ax.tick_params(axis='y', labelsize=14)
         ax.grid(axis='y', linestyle='--', alpha=0.6)
 
-    # Legende nur für den ersten Subplot
+    # Legend only for the first subplot
     handles, labels = axes[0].get_legend_handles_labels()
     axes[0].legend(handles, labels, loc='upper right', fontsize=12)
 
     plt.tight_layout()
     return fig
+
+
+
 
     '''
     # Define the base color palette for unique variations
@@ -227,7 +249,10 @@ def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
 def plot_EQE_curves(result_df,nomad_url, token):
-    
+    max_EQE = .0
+    wellenlenge_min = np.inf
+    wellenlenge_max = .0
+
     fig, ax = plt.subplots()
     
     # Define a color palette for the groups
@@ -241,18 +266,22 @@ def plot_EQE_curves(result_df,nomad_url, token):
         eqe_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'EQEmeasurement', nomad_url, token)
         #Relevant arrays
         wavelength_array = eqe_data[0]['eqe_data'][0]['wavelength_array']
-        eqe_array = eqe_data[0]['eqe_data'][0]['eqe_array']
-        #eqe_data[0]['eqe_data'][0]['integrated_jsc']
-        #eqe_data[0]['eqe_data'][0]['bandgap_eqe']
-        #Plot
-        ax.plot(wavelength_array, eqe_array, label=f"{row['category']}", color=colors[index])
+        eqe_array = [w * 100 for w in eqe_data[0]['eqe_data'][0]['eqe_array']]
+        if max_EQE < max(eqe_array):
+            max_EQE = max(eqe_array)
+        if wellenlenge_min > min(wavelength_array):
+            wellenlenge_min = min(wavelength_array)
+        if wellenlenge_max < max(wavelength_array):
+            wellenlenge_max = max(wavelength_array)
+        ax.plot(wavelength_array, eqe_array, color=colors[index], label=f"{row['category']}: {round(eqe_data[0]['eqe_data'][0]['integrated_jsc'],2)} mA/cm² {round(eqe_data[0]['eqe_data'][0]['bandgap_eqe'],2)} eV")
         print(row[f'maximum_efficiency_id'])
                         
-
     # Plot settings
+    yticks = [i for i in range(0,math.ceil(max_EQE/10)*10+10,10)] #erstellt eine liste von 0 bis max EQE bis auf 10 aufgerundet in 10er schritten
+    ax.set_yticks(yticks)
+    ax.set_ylim(0, max(yticks))
     ax.legend()
-    ax.set_xlim(300, 900)
-    ax.set_ylim(0, 1)
+    ax.set_xlim(wellenlenge_min-20, wellenlenge_max+20)
     ax.set_title(f'EQE Curves', fontsize=16)
     ax.set_xlabel('Wavelength (nm)', fontsize=12)
     ax.set_ylabel('EQE (%)', fontsize=12)
