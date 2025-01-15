@@ -96,6 +96,8 @@ def plot_box_and_scatter(df, quantities,  SeparateScanDir=False):
         ax.set_xticks(range(len(unique_variations)))
         ax.set_xticklabels(unique_variations, fontsize=14)
         ax.set_xlabel("")
+        if unique_variations.size > 5:
+            ax.set_xtickslabels(rotation=45, ha='right')
         ax.tick_params(axis='y', labelsize=14)
         ax.grid(axis='y', linestyle='--', alpha=0.6)
 
