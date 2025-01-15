@@ -55,6 +55,7 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
 
 def plot_box_and_scatter(df, quantities, SeparateScanDir=False):
+    legende = True
     unique_variations = df['variation'].unique()  # List of variations
 
     # Filter and organize data
@@ -93,7 +94,7 @@ def plot_box_and_scatter(df, quantities, SeparateScanDir=False):
             y='Value',
             hue='Direction',
             data=dataframe,
-            ax=ax
+            ax=ax,
         )
         
         # Stripplot with adjusted colors
@@ -119,13 +120,18 @@ def plot_box_and_scatter(df, quantities, SeparateScanDir=False):
             ax.set_xticklabels(unique_variations, rotation=45, ha='right')
         ax.tick_params(axis='y', labelsize=14)
         ax.grid(axis='y', linestyle='--', alpha=0.6)
-
-    # Legend only for the first subplot
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[0].legend(handles, labels, loc='upper right', fontsize=12)
+        
+        # Remove legend for all subplots except the first
+        if legende:
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles, labels, loc='upper right', fontsize=12)
+            legende = False
+        else:
+            ax.get_legend().remove()
 
     plt.tight_layout()
     return fig
+
 
 
 
