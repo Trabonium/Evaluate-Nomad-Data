@@ -7,6 +7,7 @@ from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
 from functions.plotting_functions import plot_box_and_scatter, plot_JV_curves, plot_EQE_curves, plot_MPP_curves
 from functions.generate_report import generate_pdf_report
+from functions.PowerPoint import extract_images_from_pdf, duplicate_slide, insert_images_into_ppt, Beginn
 
 # Initialize variables
 selected_file_path = None
@@ -158,6 +159,7 @@ eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 
+
 tk.Checkbutton(root, text="JV Curves", variable=jv_var).pack()
 tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).pack()
 tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).pack()  
@@ -167,6 +169,7 @@ tk.Checkbutton(root, text="Data Table", variable=table_var).pack()
 
 # Report Generation Button
 tk.Button(root, text="Generate Report", command=generate_report).pack(pady=20)
-
+#print(directory, file_name)
+#tk.Button(root, text="PPTX", command=lambda: PowerPoint(directory, file_name)).pack(pady=21)
 # Run the application
 root.mainloop()
