@@ -132,11 +132,11 @@ class ExperimentExcelBuilder:
 
         # PVD Processes multiple materials
         if process_name == "Seq-Evaporation" or process_name == "Co-Evaporation":
-            steps = ["Material name", "Layer type", "Tool/GB name", "Base pressure [bar]",
-                     "Pressure start [bar]", "Pressure end [bar]", "Substrate temperature [°C]"]
+            steps = ["Material name", "Layer type", "Tool/GB name"]
             for i in range(1, config.get('materials', 0) + 1):
-                steps.extend([f"Material {i} name", f"Material {i} organic", f"Material {i} source temperature start [°C]", f"Material {i} source temperature end [°C]",
-                              f"Material {i} thickness [nm]", f"Material {i} rate [angstrom/s]", f"Material {i} tooling factor", "Notes"])
+                steps.extend([ f"Base pressure {i} [bar]", f"Pressure start {i} [bar]", f"Pressure end {i} [bar]",
+                              f"Source temperature start {i} [°C]", f"Source temperature end {i} [°C]", f"Substrate temperature {i}  [°C]", 
+                              f"Thickness {i} [nm]", f"Rate [angstrom/s] {i} ", f"Tooling factor {i} "])
             return steps
 
         else:
