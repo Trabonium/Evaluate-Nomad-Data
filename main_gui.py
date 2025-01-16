@@ -118,6 +118,9 @@ def generate_report():
         messagebox.showinfo("Success", f"PDF report saved to: {file_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+def schieberegler():
+    return
     
 def start_pptx_generation(directory, file_name):
     messagebox.showinfo("Info", "Please wait while the PowerPoint presentation is being generated...")
@@ -157,10 +160,14 @@ file_path_label.grid(row=6, column=0, columnspan=2, pady=5)
 
 # Data and Statistics Buttons
 tk.Button(root, text="Load corresponding Data from NOMAD OASIS", command=load_data).grid(row=7, column=0, columnspan=2, pady=10)
-tk.Button(root, text="Calculate Statistics", command=calculate_stats).grid(row=8, column=0, columnspan=2, pady=10)
+
+#hier existiert jetzt data (dataframe mit allen Daten und hier könnte man sich jetzt filter überlegen)
+tk.Button(root, text="filter your data", command=schieberegler).grid(row=8, column=0, columnspan=2, pady=10)
+
+tk.Button(root, text="Calculate Statistics", command=calculate_stats).grid(row=9, column=0, columnspan=2, pady=10)
 
 # Plot Selection Section
-tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).grid(row=9, column=0, columnspan=2, pady=10)
+tk.Label(root, text="Select Plots for Report", font=("Helvetica", 12, "bold")).grid(row=10, column=0, columnspan=2, pady=10)
 
 jv_var = tk.BooleanVar(value=True)
 box_var = tk.BooleanVar(value=True)
@@ -169,19 +176,19 @@ eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 
-tk.Checkbutton(root, text="JV Curves", variable=jv_var).grid(row=10, column=0, sticky="w")
-tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).grid(row=11, column=0, sticky="w")
-tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).grid(row=12, column=0, sticky="w")
-tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).grid(row=13, column=0, sticky="w")
-tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).grid(row=14, column=0, sticky="w")
-tk.Checkbutton(root, text="Data Table", variable=table_var).grid(row=15, column=0, sticky="w")
+tk.Checkbutton(root, text="JV Curves", variable=jv_var).grid(row=11, column=0, sticky="w")
+tk.Checkbutton(root, text="Box + Scatter Plots", variable=box_var).grid(row=12, column=0, sticky="w")
+tk.Checkbutton(root, text="Separate Backwards/Forwards", variable=separate_scan_var).grid(row=13, column=0, sticky="w")
+tk.Checkbutton(root, text="EQE Curves", variable=eqe_var).grid(row=14, column=0, sticky="w")
+tk.Checkbutton(root, text="MPP Curves", variable=mpp_var).grid(row=15, column=0, sticky="w")
+tk.Checkbutton(root, text="Data Table", variable=table_var).grid(row=16, column=0, sticky="w")
 
 # Buttons in einer Reihe (Generate Report und PPTX)
 generate_report_button = tk.Button(root, text="Generate Report", command=generate_report)
-generate_report_button.grid(row=16, column=0, padx=10, pady=20)
+generate_report_button.grid(row=17, column=0, padx=10, pady=20)
 
-pptx_button = tk.Button(root, text="PPTX", command=lambda: start_pptx_generation(directory, file_name))
-pptx_button.grid(row=16, column=1, padx=10, pady=20)
+#pptx_button = tk.Button(root, text="PPTX", command=lambda: start_pptx_generation(directory, file_name))
+#pptx_button.grid(row=18, column=1, padx=10, pady=20)
 
 # Run the application
 root.mainloop()
