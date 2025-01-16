@@ -1,86 +1,99 @@
 import os
-from PIL import Image  # Für die Bildverarbeitung
+import fitz  # PyMuPDF
+from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches
-from fitz import open as fitz_open  # PyMuPDF
-from tkinter import Tk, filedialog
+import pandas as pd
 
-def extract_images_from_pdf(pdf_path, output_folder):
-    """Extrahiert Bilder aus einer PDF-Datei und speichert sie im Ausgabeverzeichnis."""
-    pdf_document = fitz_open(pdf_path)
+
+def render_pdf_pages_as_images(pdf_path, output_folder, dpi=200):
+    """Rendert die Seiten einer PDF als Bilder und speichert sie."""
+    pdf_document = fitz.open(pdf_path)
     image_paths = []
+
+    # Sicherstellen, dass der Output-Ordner existiert
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     for page_number in range(len(pdf_document)):
         page = pdf_document[page_number]
-        images = page.get_images(full=True)
-
-        for img_index, img in enumerate(images):
-            xref = img[0]
-            base_image = pdf_document.extract_image(xref)
-            image_bytes = base_image["image"]
-            image_extension = base_image["ext"]
-            image_filename = f"page{page_number + 1}_img{img_index + 1}.{image_extension}"
-            image_path = os.path.join(output_folder, image_filename)
-
-            with open(image_path, "wb") as image_file:
-                image_file.write(image_bytes)
-
-            image_paths.append(image_path)
+        pix = page.get_pixmap(dpi=dpi)  # Seite rendern
+        image_filename = f"page{page_number + 1}.png"
+        image_path = os.path.join(output_folder, image_filename)
+        pix.save(image_path)  # Bild speichern
+        image_paths.append(image_path)
 
     pdf_document.close()
     return image_paths
 
 
 def create_presentation(image_paths, output_ppt_path):
-    """Erstellt eine PowerPoint-Präsentation und fügt extrahierte Bilder hinzu."""
+    """Erstellt eine PowerPoint-Präsentation und fügt Bilder ein."""
     prs = Presentation()
 
-    # Folie 3 erstellen oder duplizieren
-    slide_layout = prs.slide_layouts[5]  # Leere Folie
-    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 1
-    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 2
-    slide = prs.slides.add_slide(slide_layout)  # Leere Folie 3
+    # Layout für leere Folie
+    slide_layout = prs.slide_layouts[5]  # Leeres Layout
 
-    max_width = Inches(5)
-    max_height = Inches(4)
-    right_edge = Inches(10)  # Rechte Kante der Folie
-
-    # Bilder auf Folie 3 einfügen und duplizieren
     for idx, image_path in enumerate(image_paths):
-        # Folie 3 einfügen/duplizieren je nach Bildanzahl
-        if idx > 0:
-            slide = prs.slides.add_slide(slide_layout)  # Folie 3 duplizieren
-        left = right_edge - max_width
-        top = (Inches(7.5) - max_height) / 2  # Zentriert
-        slide.shapes.add_picture(image_path, left, top, width=max_width, height=max_height)
+        slide = prs.slides.add_slide(slide_layout)  # Neue Folie hinzufügen
+        # Bildgröße und -position anpassen
+        left = Inches(1)  # Von links 1 Inch
+        top = Inches(1)  # Von oben 1 Inch
+        slide.shapes.add_picture(image_path, left, top, width=Inches(8), height=Inches(6))
 
     prs.save(output_ppt_path)
     print(f"PowerPoint-Datei wurde gespeichert: {output_ppt_path}")
 
 
-def process_pdf_to_ppt(pdf_path, pdf_filename):
-    """Hauptprozess: Extrahiert Bilder aus der PDF und erstellt eine PowerPoint-Präsentation."""
-    output_folder = os.path.dirname(pdf_path)
+def extract_table_from_pdf(pdf_path):
+    """Extrahiert Tabelleninhalte aus der PDF und gibt sie als DataFrame aus."""
+    pdf_document = fitz.open(pdf_path)
+    all_tables = []
 
-    # Template.pptx laden oder Datei auswählen
-    template_ppt_path = os.path.join(output_folder, "Template.pptx")
-    if not os.path.exists(template_ppt_path):
-        print("Template.pptx nicht gefunden. Bitte wähle die Datei aus.")
-        Tk().withdraw()  # Verhindert, dass das Tkinter-Hauptfenster angezeigt wird
-        template_ppt_path = filedialog.askopenfilename(title="Template.pptx auswählen", filetypes=[("PowerPoint-Dateien", "*.pptx")])
+    for page_number in range(len(pdf_document)):
+        page = pdf_document[page_number]
+        text = page.get_text("dict")  # Text als strukturierte Daten
+        blocks = text.get("blocks", [])
 
-    if not template_ppt_path:
-        print("Es konnte keine Template.pptx-Datei gefunden oder ausgewählt werden.")
-        return
+        for block in blocks:
+            if "lines" in block:
+                # Textzeilen der Tabelle auslesen
+                table_data = []
+                for line in block["lines"]:
+                    words = [span["text"] for span in line["spans"]]
+                    table_data.append(words)
 
-    # Extrahieren der Bilder
-    print("Extrahiere Bilder aus der PDF...")
-    image_paths = extract_images_from_pdf(pdf_path+"/"+pdf_filename, output_folder)
+                # Prüfen, ob Daten tabellarisch wirken
+                if table_data:
+                    print(f"Gefundene Tabelle auf Seite {page_number + 1}:")
+                    df = pd.DataFrame(table_data[1:], columns=table_data[0])  # Erste Zeile als Header
+                    print(df)
+                    all_tables.append(df)
+
+    pdf_document.close()
+    return all_tables
+
+
+def process_pdf_to_ppt(pdf_path):
+    """Hauptprozess: Rendert PDF-Seiten, erstellt PowerPoint und extrahiert Tabellen."""
+    output_folder = os.path.join(os.path.dirname(pdf_path), "output_images")
+    output_ppt_path = os.path.join(os.path.dirname(pdf_path), "output_presentation.pptx")
+
+    # Schritt 1: Seiten als Bilder rendern
+    print("Rendere Seiten der PDF als Bilder...")
+    image_paths = render_pdf_pages_as_images(pdf_path, output_folder)
     if not image_paths:
-        print("Keine Bilder in der PDF gefunden.")
+        print("Keine Seitenbilder in der PDF gefunden.")
         return
 
-    # Erstellen der PowerPoint-Präsentation
-    output_ppt_path = os.path.join(output_folder, "output_presentation.pptx")
+    # Schritt 2: PowerPoint-Präsentation erstellen
     print("Erstelle PowerPoint-Präsentation...")
     create_presentation(image_paths, output_ppt_path)
+
+    # Schritt 3: Tabellen extrahieren
+    print("Extrahiere Tabellen aus der PDF...")
+    tables = extract_table_from_pdf(pdf_path)
+    if not tables:
+        print("Keine Tabellen in der PDF gefunden.")
+    else:
+        print("Tabellen erfolgreich extrahiert.")
