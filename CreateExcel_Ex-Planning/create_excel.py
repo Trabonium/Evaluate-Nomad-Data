@@ -171,9 +171,9 @@ class ExperimentExcelBuilder:
 # Define the base process configuration
 process_config = {
     "Experiment Info": {"steps": ["Date", "Project_Name", "Batch", "Subbatch", "Sample", "Nomad ID", "Variation",
-                                  "Sample dimension", "Sample area [cm^2]", "Substrate material",
-                                  "Substrate conductive layer", "Notes"]}, # Added DB2025-01-08 Notes
-    "Multijunction Info": {"steps": ["Number of junctions", "Bottom Cell Name", "Recombination Layer", "Notes"]}, #Added DB2025-01-06 Multijunction Info, Added DB2025-01-08 Notes
+                                  "Sample dimension", "Sample area [cm^2]", "Number of pixels", "Pixel area", "Number of junctions", "Substrate material",
+                                  "Substrate conductive layer", "Bottom Cell Name", "Notes"]}, # Added DB2025-01-08 Notes
+    "Multijunction Info": {"steps": ["Recombination Layer", "Notes"]}, #Added DB2025-01-06 Multijunction Info, Added DB2025-01-08 Notes
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
