@@ -113,6 +113,7 @@ def generate_pdf_report(df, result_df, include_plots, report_title, nomad_url, t
         plt.close(fig_table)
 
     print("PDF report generated successfully.")
+    return(directory, file_name)
 
 def insert_line_breaks(text):
     """
