@@ -134,9 +134,9 @@ class ExperimentExcelBuilder:
         if process_name == "Seq-Evaporation" or process_name == "Co-Evaporation":
             steps = ["Material name", "Layer type", "Tool/GB name"]
             for i in range(1, config.get('materials', 0) + 1):
-                steps.extend([ f"Base pressure {i} [bar]", f"Pressure start {i} [bar]", f"Pressure end {i} [bar]",
-                              f"Source temperature start {i} [°C]", f"Source temperature end {i} [°C]", f"Substrate temperature {i}  [°C]", 
-                              f"Thickness {i} [nm]", f"Rate [angstrom/s] {i} ", f"Tooling factor {i} "])
+                steps.extend([f"Material name {i}", f"Base pressure {i} [bar]", f"Pressure start {i} [bar]", f"Pressure end {i} [bar]",
+                              f"Source temperature start {i}[°C]", f"Source temperature end {i}[°C]", f"Substrate temperature {i} [°C]", 
+                              f"Thickness {i} [nm]", f"Rate {i} [angstrom/s] ", f"Tooling factor {i}"])
             return steps
 
         else:
@@ -189,6 +189,10 @@ process_config = {
     "Co-Evaporation": {"materials": 2},
     # Added DB 2024-11-29  multiple materials #Could also be called Seq-Sublimation instead of Seq-Evaporation
     "Seq-Evaporation": {"materials": 2},
+    "Close Space Sublimation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Process pressure [bar]",
+                              "Source temperature [°C]", "Substrate temperature [°C]", "Material state", "Substrate source distance [mm]",
+                              "Thickness [nm]", "Deposition Time [s]", "Carrier gas", "Notes"]},
+
     "Sputtering": {"steps": ["Material name", "Layer type", "Tool/GB name", "Gas", "Temperature [°C]", "Pressure [mbar]",
                              "Deposition time [s]", "Burn in time [s]", "Power [W]", "Rotation rate [rpm]",
                              "Thickness [nm]", "Gas flow rate [cm^3/min]", "Notes"]},
@@ -364,6 +368,21 @@ process_config = {
 #   {"process": "ALD"},            #SnO2
 #   {"process": "Evaporation"}     #Ag
 #]
+
+
+# Process for  Co Evap
+process_sequence = [
+   {"process": "Experiment Info"},
+   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
+   {"process": "Co-Evaporation", "config":  {"materials": 3} },              #PSK 
+   {"process": "Annealing"},      #Annealing
+   {"process": "Evaporation"},    #C60
+   {"process": "Evaporation"},    #BCP
+   {"process": "ALD"},            #SnO2
+   {"process": "Evaporation"}     #Ag
+]
 
 
 ## Process for Tandem SC Xuzheng Lingyi
