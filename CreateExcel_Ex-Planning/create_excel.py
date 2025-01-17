@@ -201,7 +201,7 @@ process_config = {
     "ALD": {"steps": ["Material name", "Layer type", "Tool/GB name", "Source", "Thickness [nm]", "Temperature [°C]", "Rate [A/s]",
                       "Time [s]", "Number of cycles", "Precursor 1", "Pulse duration 1 [s]",
                       "Manifold temperature 1 [°C]", "Bottle temperature 1 [°C]", "Precursor 2 (Oxidizer/Reducer)", "Pulse duration 2 [s]",
-                      "Maniforld temperature 2 [°C]"]},
+                      "Manifold temperature 2 [°C]"]},
     "Annealing": {"steps": ["Annealing time [min]", "Annealing temperature [°C]", "Annealing athmosphere", "Relative humidity [%]", "Notes"]}, # Added DB 2024-11-29 Annealing
 
     "Generic Process": {"steps": ["Name", "Notes"]}
