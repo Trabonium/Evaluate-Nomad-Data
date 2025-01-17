@@ -446,7 +446,9 @@ process_config = {
 #     {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "gasquenching": True}},   #Passivation Sol
 # ]
 
+
 # Create an instance of ExperimentExcelBuilder and build the Excel file
+process_sequence = []
 builder = ExperimentExcelBuilder(process_sequence, process_config)
-builder.build_excel()
-builder.save()
+#builder.build_excel()
+#builder.save()

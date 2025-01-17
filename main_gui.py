@@ -7,7 +7,7 @@ from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
 from functions.plotting_functions import plot_box_and_scatter, plot_JV_curves, plot_EQE_curves, plot_MPP_curves
 from functions.generate_report import generate_pdf_report
-from functions.PowerPoint import process_pdf_to_ppt, create_presentation, process_pdf_to_ppt
+#from functions.PowerPoint import process_pdf_to_ppt, create_presentation, process_pdf_to_ppt
 
 # Initialize variables
 selected_file_path = None
