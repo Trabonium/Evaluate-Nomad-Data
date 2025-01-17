@@ -136,7 +136,7 @@ class ExperimentExcelBuilder:
             for i in range(1, config.get('materials', 0) + 1):
                 steps.extend([f"Material name {i}", f"Base pressure {i} [bar]", f"Pressure start {i} [bar]", f"Pressure end {i} [bar]",
                               f"Source temperature start {i}[°C]", f"Source temperature end {i}[°C]", f"Substrate temperature {i} [°C]", 
-                              f"Thickness {i} [nm]", f"Rate {i} [angstrom/s] ", f"Tooling factor {i}"])
+                              f"Thickness {i} [nm]", f"Rate {i} [angstrom/s]", f"Tooling factor {i}"])
             return steps
 
         else:
@@ -370,19 +370,35 @@ process_config = {
 #]
 
 
-# Process for  Co Evap
-process_sequence = [
-   {"process": "Experiment Info"},
-   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
-   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
-   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
-   {"process": "Co-Evaporation", "config":  {"materials": 3} },              #PSK 
-   {"process": "Annealing"},      #Annealing
-   {"process": "Evaporation"},    #C60
-   {"process": "Evaporation"},    #BCP
-   {"process": "ALD"},            #SnO2
-   {"process": "Evaporation"}     #Ag
-]
+## Process for  Co Evap
+#process_sequence = [
+#   {"process": "Experiment Info"},
+#   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
+#   {"process": "Co-Evaporation", "config":  {"materials": 3} },              #PSK 
+#   {"process": "Annealing"},      #Annealing
+#   {"process": "Evaporation"},    #C60
+#   {"process": "Evaporation"},    #BCP
+#   {"process": "ALD"},            #SnO2
+#   {"process": "Evaporation"}     #Ag
+#]
+
+
+
+## Process for CSS
+#process_sequence = [
+#   {"process": "Experiment Info"},
+#   {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "antisolvent": False}},   #SAM
+#   {"process": "Spin Coating", "config":  {"solvents": 1, "spinsteps":1 , "antisolvent": False}},   #SAM Washing
+#   {"process": "Close Space Sublimation"},              #PSK 
+#   {"process": "Annealing"},      #Annealing
+#   {"process": "Evaporation"},    #C60
+#   {"process": "Evaporation"},    #BCP
+#   {"process": "ALD"},            #SnO2
+#   {"process": "Evaporation"}     #Ag
+#]
 
 
 ## Process for Tandem SC Xuzheng Lingyi
