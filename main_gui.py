@@ -7,7 +7,7 @@ from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
 from functions.plotting_functions import plot_box_and_scatter, plot_JV_curves, plot_EQE_curves, plot_MPP_curves
 from functions.generate_report import generate_pdf_report
-from functions.filter_data import main_filter, schieberegler_main, open_sliders_window, create_dual_slider, update_df_func
+from functions.schieberegler import main_filter, schieberegler_main, open_sliders_window, create_dual_slider, update_df_func
 #from functions.PowerPoint import process_pdf_to_ppt, create_presentation, process_pdf_to_ppt
 
 # Initialize variables
