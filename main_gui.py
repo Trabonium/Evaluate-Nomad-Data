@@ -8,6 +8,7 @@ from functions.calculate_statistics import calculate_statistics
 from functions.plotting_functions import plot_box_and_scatter, plot_JV_curves, plot_EQE_curves, plot_MPP_curves
 from functions.generate_report import generate_pdf_report
 from functions.PowerPoint import process_pdf_to_ppt, create_presentation, process_pdf_to_ppt
+from functions.schieberegler import schieberegler_main, open_sliders_window, create_dual_slider, main_filter, update_df_func
 
 # Initialize variables
 selected_file_path = None
@@ -74,24 +75,40 @@ def load_data():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load data: {e}")
 
+def filter_data():
+    global filtered_data, data
+    if 'data' not in globals():
+        messagebox.showerror("Error", "Please load data first!")
+        return
+    try:
+        filtered_data = main_filter(data, master = root)
+        messagebox.showinfo("Success", "Data filtered successfully!")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to filter data: {e}")
+
 
 # Function to calculate statistics
 def calculate_stats():
-    global data, stats
+    global data, stats, filtered_data
     if data is None:
         messagebox.showerror("Error", "Load data first!")
         return
     try:
-        stats = calculate_statistics(data)
-        messagebox.showinfo("Success", "Statistics calculated successfully!")
+        stats = calculate_statistics(filtered_data)
+        messagebox.showinfo("Success", "Statistics calculated successfully with the filter!")
         print(stats)
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to calculate statistics: {e}")
-
+    except:
+        try:
+            stats = calculate_statistics(data)
+            messagebox.showinfo("Success", "Statistics calculated successfully (raw data)!")
+            print(stats)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to calculate statistics: {e}")
+        
 
 # Function to generate PDF report
 def generate_report():
-    global data, stats, directory, file_name
+    global data, stats, directory, file_name, filtered_data
 
     if data is None or stats is None:
         messagebox.showerror("Error", "Please load data and calculate statistics first.")
@@ -111,17 +128,19 @@ def generate_report():
         "MPP": mpp_var.get(),
         "Table": table_var.get(),
     }
-
     try:
         # Generate the PDF report
-        directory, file_name = generate_pdf_report(data, stats, selected_plots, file_path, nomad_url, token)
-        messagebox.showinfo("Success", f"PDF report saved to: {file_path}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}")
+        directory, file_name = generate_pdf_report(filtered_data, stats, selected_plots, file_path, nomad_url, token)
+        messagebox.showinfo("Success", f"PDF report with filtered data saved to: {file_path}")
+    except:
+        try:
+            # Generate the PDF report
+            directory, file_name = generate_pdf_report(data, stats, selected_plots, file_path, nomad_url, token)
+            messagebox.showinfo("Success", f"PDF report with raw data saved to: {file_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {e}")
 
-def schieberegler():
-    return
-    
+# to be continued
 def start_pptx_generation(directory, file_name):
     messagebox.showinfo("Info", "Please wait while the PowerPoint presentation is being generated...")
     if not directory or not file_name:
@@ -162,7 +181,7 @@ file_path_label.grid(row=6, column=0, columnspan=2, pady=5)
 tk.Button(root, text="Load corresponding Data from NOMAD OASIS", command=load_data).grid(row=7, column=0, columnspan=2, pady=10)
 
 #hier existiert jetzt data (dataframe mit allen Daten und hier könnte man sich jetzt filter überlegen)
-tk.Button(root, text="filter your data", command=schieberegler).grid(row=8, column=0, columnspan=2, pady=10)
+tk.Button(root, text="filter your data", command=filter_data).grid(row=8, column=0, columnspan=2, pady=10)
 
 tk.Button(root, text="Calculate Statistics", command=calculate_stats).grid(row=9, column=0, columnspan=2, pady=10)
 
