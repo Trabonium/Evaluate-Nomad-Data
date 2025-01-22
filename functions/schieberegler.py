@@ -123,7 +123,7 @@ def open_sliders_window(filter_window, df_min_max_bounds):
 
 
 # Funktion zum Starten des Programms
-def schieberegler_main(filter_window, df_default_werte):
+def schieberegler_main(filter_window, filtered_df):
     global df_min_max_self
 
     # Erstelle df_min_max_bounds mit Min- und Max-Werten
@@ -131,16 +131,16 @@ def schieberegler_main(filter_window, df_default_werte):
 
     df_min_max_bounds["Parameter"] = ["PCE", "FF", "Voc", "Jsc"]
     df_min_max_bounds["Min"] = [
-        min(df_default_werte["efficiency"].tolist()),
-        min(df_default_werte["fill_factor"].tolist()),
-        min(df_default_werte["open_circuit_voltage"].tolist()),
-        min(df_default_werte["short_circuit_current_density"].tolist()),
+        min(filtered_df["efficiency"].tolist()),
+        min(filtered_df["fill_factor"].tolist()),
+        min(filtered_df["open_circuit_voltage"].tolist()),
+        min(filtered_df["short_circuit_current_density"].tolist()),
     ]
     df_min_max_bounds["Max"] = [
-        max(df_default_werte["efficiency"].tolist()),
-        max(df_default_werte["fill_factor"].tolist()),
-        max(df_default_werte["open_circuit_voltage"].tolist()),
-        max(df_default_werte["short_circuit_current_density"].tolist()),
+        max(filtered_df["efficiency"].tolist()),
+        max(filtered_df["fill_factor"].tolist()),
+        max(filtered_df["open_circuit_voltage"].tolist()),
+        max(filtered_df["short_circuit_current_density"].tolist()),
     ]
 
     df_min_max_self = df_min_max_bounds.copy()
@@ -153,12 +153,18 @@ def update_df_func(slider_id, param, value):
     df_min_max_self.at[slider_id, param] = value
 
 def main_filter(df_default_werte, master):
+    filtered_df = df_default_werte.copy() #zuerst kopie definieren
+    # NaNs rauswerfen
+    filtered_df = filtered_df.dropna(subset=['efficiency'])
+    filtered_df = filtered_df.dropna(subset=['fill_factor'])
+    filtered_df = filtered_df.dropna(subset=['open_circuit_voltage'])
+    filtered_df = filtered_df.dropna(subset=['short_circuit_current_density'])
 
     filter_window = tk.Toplevel(master)
     filter_window.title("Dual Sliders")
     filter_window.geometry("400x700")
 
-    schieberegler_main(filter_window, df_default_werte)
+    schieberegler_main(filter_window, filtered_df) #hier werden die grenzenn zum filtern gesetzt
 
     filter_window.grab_set()
     filter_window.wait_window()
@@ -175,7 +181,7 @@ def main_filter(df_default_werte, master):
     min_voc = df_min_max_self[df_min_max_self["Parameter"] == "Voc"]["Min"].values[0]
     max_voc = df_min_max_self[df_min_max_self["Parameter"] == "Voc"]["Max"].values[0]
 
-    filtered_df = df_default_werte.copy() #zuerst kopieren und dann rauswerfen was nicht rein soll
+    #nach NaN filter jetzt aktiveer datenfilter
     filtered_df = filtered_df[(filtered_df['efficiency'] >= min_pce) & (filtered_df['efficiency'] <= max_pce)]
     filtered_df = filtered_df[(filtered_df['fill_factor'] >= min_ff) & (filtered_df['fill_factor'] <= max_ff)]
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
