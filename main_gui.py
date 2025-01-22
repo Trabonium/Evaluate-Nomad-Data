@@ -139,7 +139,7 @@ def generate_report():
             messagebox.showinfo("Success", f"PDF report with raw data saved to: {file_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
-
+'''
 # to be continued
 def start_pptx_generation(directory, file_name):
     messagebox.showinfo("Info", "Please wait while the PowerPoint presentation is being generated...")
@@ -148,7 +148,7 @@ def start_pptx_generation(directory, file_name):
     process_pdf_to_ppt(directory, file_name)
     messagebox.showinfo("Info", "PPTX presentation generated successfully!")
     return 
-
+'''
 # Create main application window
 root = tk.Tk()
 root.title("Data Analysis GUI")
