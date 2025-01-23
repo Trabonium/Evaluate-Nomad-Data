@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import simpledialog
 from create_excel import ExperimentExcelBuilder, process_config
 
 class ExperimentGUI(tk.Tk):
@@ -29,11 +30,16 @@ class ExperimentGUI(tk.Tk):
         self.sequence_listbox.pack(pady=10)
 
         # Button to generate the experiment plan (Excel file)
+        self.remove_button = tk.Button(self, text="Remove Last Process Step", command=self.remove_process)
+        self.remove_button.pack(pady=10)
+
+        # Button to generate the experiment plan (Excel file)
         self.generate_button = tk.Button(self, text="Generate Experiment Plan", command=self.generate_experiment_plan)
         self.generate_button.pack(pady=10)
 
         # List to hold the sequence of processes (this includes Experiment Info first)
         self.process_sequence = [{"process": "Experiment Info", "config": {}}]
+        self.sequence_listbox.insert(tk.END, "Experiment Info")
 
         # To hold the current process's additional parameters
         self.current_process_params = None
@@ -54,77 +60,28 @@ class ExperimentGUI(tk.Tk):
         selected_process = self.process_combobox.get()
 
         if selected_process and selected_process != "Experiment Info":
-            # Add the experiment info first if not already present
-            if not any(step["process"] == "Experiment Info" for step in self.process_sequence):
-                self.process_sequence.insert(0, {"process": "Experiment Info", "config": {}})
-                self.sequence_listbox.insert(tk.END, "Experiment Info")
-
             # Check if the selected process has additional parameters
-            process_details = process_config.get(selected_process, {})
+            self.process_details = process_config.get(selected_process, {})
+
+            if 'steps' in self.process_details:
+                pass
+            else:
+                # No steps, add process details
+                self.process_details = self.get_process_inputs_gui()
 
             # Add the selected process to the sequence
-            self.process_sequence.append({"process": selected_process, "config": {}})
+            self.process_sequence.append({"process": selected_process, "config": self.process_details})
             self.sequence_listbox.insert(tk.END, selected_process)
-
-            # If the selected process has extra parameters, ask the user to input them
-            if "steps" in process_details:
-                self.ask_for_additional_parameters(selected_process, process_details)
 
         else:
             messagebox.showwarning("Invalid Selection", "Please select a valid process.")
 
-    def ask_for_additional_parameters(self, process_name, process_details):
-        """
-        Prompt the user to enter additional parameters such as solvents, solutes, or materials.
-        This will only prompt if the selected process has additional data.
-        """
-        # Create a new window for parameter input
-        param_window = tk.Toplevel(self)
-        param_window.title(f"Input Parameters for {process_name}")
-        param_window.geometry("300x200")
-
-        # Label for the process
-        label = tk.Label(param_window, text=f"Enter parameters for {process_name}:")
-        label.pack(pady=10)
-
-        # Loop through the additional parameters in the process
-        for param, value in process_details.items():
-            if param != "steps":  # Skip the steps key
-                # Create a label and an entry for each parameter
-                param_label = tk.Label(param_window, text=f"{param}:")
-                param_label.pack(pady=5)
-                param_entry = tk.Entry(param_window)
-                param_entry.pack(pady=5)
-                param_entry.insert(0, str(value))  # Default value as the current one
-
-                # Store the entry widget for later retrieval
-                if not hasattr(self, 'entries'):
-                    self.entries = {}
-
-                self.entries[param] = param_entry
-
-        # Button to confirm and close the parameter input window
-        confirm_button = tk.Button(param_window, text="Confirm", command=lambda: self.confirm_parameters(param_window))
-        confirm_button.pack(pady=10)
-
-    def confirm_parameters(self, param_window):
-        """
-        Confirm the parameters entered by the user and close the parameter window.
-        """
-        # Retrieve values from the input fields and store them in the sequence
-        for param, entry in self.entries.items():
-            value = entry.get()
-            # Validate the integer input (if the value is an integer)
-            if param != "steps":
-                try:
-                    value = int(value)
-                    # Append the parameter to the process configuration
-                    self.process_sequence[-1]["config"][param] = value
-                except ValueError:
-                    messagebox.showerror("Invalid Input", f"Please enter a valid integer for {param}.")
-                    return
-
-        param_window.destroy()
+    def remove_process(self):
+        if len(self.process_sequence) > 1:
+            self.process_sequence.pop()
+            self.sequence_listbox.delete(tk.END)
+        else:
+            messagebox.showwarning("Invalid Operation", "Cannot remove the Experiment Info step.")
 
     def generate_experiment_plan(self):
         if len(self.process_sequence) <= 1:
@@ -139,6 +96,39 @@ class ExperimentGUI(tk.Tk):
         builder.save()
 
         messagebox.showinfo("Success", "Experiment plan has been generated and saved.")
+
+        from tkinter import simpledialog
+
+    def get_process_inputs_gui(self):
+        """
+        Dynamically get user inputs for all keys in the given dictionary via a GUI.
+        :param process_details: Dictionary containing keys for expected inputs.
+        :return: Dictionary with user-provided values for each key.
+        """
+        # Initialize tkinter
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+
+        # Iterate through keys and get input
+        for key in self.process_details:
+            while True:
+                user_input = simpledialog.askstring("Input", f"Enter value for '{key}':")
+                if user_input is None:  # User canceled
+                    break
+                try:
+                    # Attempt to convert the input to match the data type
+                    if isinstance(self.process_details[key], int):
+                        self.process_details[key] = int(user_input)
+                    elif isinstance(self.process_details[key], float):
+                        self.process_details[key] = float(user_input)
+                    else:
+                        self.process_details[key] = user_input  # Default to string
+                    break  # Break the loop if successful
+                except ValueError:
+                    tk.messagebox.showerror("Invalid Input", f"Invalid input for '{key}'. Please try again.")
+
+        root.destroy()  # Close the tkinter app
+        return self.process_details
 
 # Main function to run the GUI application
 def run_gui():
