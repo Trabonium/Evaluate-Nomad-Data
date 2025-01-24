@@ -5,6 +5,7 @@ venv/
 build/
 dist/
 main_gui.spec
+Create_ExperimentalPlan_GUI.spec
 
 # Ignore Visual Studio Code directory
 .vscode/
