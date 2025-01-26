@@ -33,8 +33,10 @@ class ExperimentExcelBuilder:
             end_col = start_col + step_count - 1
 
             # Determine the label for the process
-            process_label = f"{incremental_number}: {process_name}" if process_name != "Experiment Info" else process_name
-            if process_name != "Experiment Info":
+            if process_name in ["Experiment Info", "Multijunction Info"]:
+                process_label = process_name
+            else:
+                process_label = f"{incremental_number}: {process_name}"
                 incremental_number += 1
 
             # Merge the cells in the first row for the process
@@ -45,8 +47,11 @@ class ExperimentExcelBuilder:
             cell = self.worksheet.cell(row=1, column=start_col)
             cell.value = process_label
             cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.fill = self.first_row_fill
-
+            if incremental_number % 2 == 0: #is even
+                cell.fill = PatternFill(start_color="FFDD00", end_color="FFDD00", fill_type="solid")	
+            else:
+                cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+            
             # Fill in the steps in the second row and apply color
             for i, step in enumerate(steps):
                 cell = self.worksheet.cell(row=2, column=start_col + i)
@@ -79,7 +84,7 @@ class ExperimentExcelBuilder:
                 steps.extend(["UV-Ozone Time [s]"])
             return steps
 
-        if process_name in ["Spin Coating", "Dip Coating", "Slot Die Coating", "Inkjet Printing"]: #Added DB2025-01-04 Printing
+        if process_name in ["Spin Coating", "Dip Coating", "Slot Die Coating", "Inkjet Printing"]: 
             steps = ["Material name", "Layer type", "Tool/GB name",]
             # Add solvent steps
             for i in range(1, config.get('solvents', 0) + 1):
@@ -90,44 +95,44 @@ class ExperimentExcelBuilder:
             # Add remaining steps based on the process type
             if process_name == "Spin Coating":
                 steps.extend(["Solution volume [uL]", "Spin Delay [s]"])
-                if config.get('spinsteps', 0) == 1:  # Added DB 2024-11-28 spinsteps
+                if config.get('spinsteps', 0) == 1:  
                     steps.extend(
                         ["Rotation speed [rpm]", "Rotation time [s]", "Acceleration [rpm/s]"])
                 else:
-                    for i in range(1, config.get('spinsteps', 0) + 1):  # Added DB 2024-11-28 spinsteps
+                    for i in range(1, config.get('spinsteps', 0) + 1):  
                         steps.extend(
                             [f"Rotation speed {i} [rpm]", f"Rotation time {i} [s]", f"Acceleration {i} [rpm/s]"])
 
                 if config.get("antisolvent", False):
                     steps.extend(["Anti solvent name", "Anti solvent volume [ml]", "Anti solvent dropping time [s]",
-                                  "Anti solvent dropping speed [uL/s]", "Anti solvent dropping heigt [mm]"])  # Added DB 2024-11-28 speed and height
-
+                                  "Anti solvent dropping speed [uL/s]", "Anti solvent dropping heigt [mm]"])  
+                    
                 if config.get("gasquenching", False):
                     steps.extend(["Gas", "Gas quenching start time [s]", "Gas quenching duration [s]", "Gas quenching flow rate [ml/s]", "Gas quenching pressure [bar]",
-                                  "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Nozzle shape", "Nozzle size [mm²]"])  # Added DB 2024-11-29
-
-                if config.get("vacuumquenching", False): # Added DB 2025-01-04
+                                  "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Nozzle shape", "Nozzle size [mm²]"])  
+                    
+                if config.get("vacuumquenching", False):
                     steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
                                     ])  
 
-            elif process_name == "Slot Die Coating": #Added DB2025-01-10/14 Added parameters/ coating run
+            elif process_name == "Slot Die Coating": 
                 steps.extend(["Coating run", "Solution volume [um]", "Flow rate [uL/min]", "Head gap [mm]", "Speed [mm/s]",
                               "Air knife angle [°]", "Air knife gap [cm]", "Bead volume [mm/s]", "Drying speed [cm/min]",
                               "Drying gas temperature [°]", "Heat transfer coefficient [W m^-2 K^-1]", "Coated area [mm²]"])
                 
             elif process_name == "Dip Coating":
-                steps.extend(["Dipping duration [s]"]) #Added DB2025-01-10 Dip Coating
+                steps.extend(["Dipping duration [s]"]) 
             
-            elif process_name == "Inkjet Printing": #Added DB2025-01-14 Printing run
+            elif process_name == "Inkjet Printing": 
                 steps.extend(["Printhead name", "Printing run", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
                               "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pL]", "Dropping Height [mm]",
                               "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
                               "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
-                              ]) # Added DB2025-01-08 more parameters
+                              ]) 
             
             # Add annealing steps
             steps.extend(["Annealing time [min]", "Annealing temperature [°C]",
-                         "Annealing athmosphere", "Notes"])  # Added DB 2024-11-28 Atm
+                         "Annealing athmosphere", "Notes"])  
             return steps
 
         # PVD Processes multiple materials
@@ -157,7 +162,6 @@ class ExperimentExcelBuilder:
         # Start from row 3 onward (assuming the first two rows are headers)
         for row in range(3, 30):  # Adjusted range for testing
             # The formula will be set for column F using Excel formula syntax
-            # Changed DB 2024-11-28 DOES not Work...
             nomad_id_formula = f'=VERKETTEN("KIT_", B{row}, "_", A{row}, "_", C{row} ,"_", D{row}, "_", E{row})'
             self.worksheet[f"F{row}"].value = nomad_id_formula
 
@@ -172,19 +176,19 @@ class ExperimentExcelBuilder:
 process_config = {
     "Experiment Info": {"steps": ["Date", "Project_Name", "Batch", "Subbatch", "Sample", "Nomad ID", "Variation",
                                   "Sample dimension", "Sample area [cm^2]", "Number of pixels", "Pixel area", "Number of junctions", "Substrate material",
-                                  "Substrate conductive layer", "Bottom Cell Name", "Notes"]}, # Added DB2025-01-08 Notes
-    "Multijunction Info": {"steps": ["Recombination Layer", "Notes"]}, #Added DB2025-01-06 Multijunction Info, Added DB2025-01-08 Notes
+                                  "Substrate conductive layer", "Bottom Cell Name", "Notes"]},
+    "Multijunction Info": {"steps": ["Recombination Layer", "Notes"]}, 
     "Cleaning O2-Plasma": {"solvents": 1},
     "Cleaning UV-Ozone": {"solvents": 1},
     
-    "Dip Coating": {"solvents": 1, "solutes": 1}, #Added DB2025-01-10 Adapted
-    "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1}, # Default values # Added DB 2024-11-28 spinsteps
-    "Slot Die Coating": {"solvents": 1, "solutes": 1},  # Default values
-    "Inkjet Printing": {"solvents": 1, "solutes": 1},  #Added DB2025-01-04 Printing
+    "Dip Coating": {"solvents": 1, "solutes": 1}, 
+    "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1, "antisolvent": False, "gasquenching": 0, "vacuumquenching": 0}, 
+    "Slot Die Coating": {"solvents": 1, "solutes": 1},  
+    "Inkjet Printing": {"solvents": 1, "solutes": 1},  
 
     "Evaporation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]",
                               "Source temperature start[°C]", "Source temperature end[°C]", "Substrate temperature [°C]", "Thickness [nm]",
-                              "Rate [angstrom/s]", "Tooling factor", "Notes"]},  # Added DB 2024-11-29 many parameters #Could also be called Sublimation instead of Evaporation
+                              "Rate [angstrom/s]", "Tooling factor", "Notes"]},  
     # Added DB 2024-11-29  multiple materials #Could also be called Co-Sublimation instead of Co-Evaporation
     "Co-Evaporation": {"materials": 2},
     # Added DB 2024-11-29  multiple materials #Could also be called Seq-Sublimation instead of Seq-Evaporation
@@ -448,7 +452,7 @@ process_config = {
 
 
 # Create an instance of ExperimentExcelBuilder and build the Excel file
-process_sequence = []
-builder = ExperimentExcelBuilder(process_sequence, process_config)
+#process_sequence = []
+#builder = ExperimentExcelBuilder(process_sequence, process_config)
 #builder.build_excel()
 #builder.save()
