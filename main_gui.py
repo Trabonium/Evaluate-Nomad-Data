@@ -23,7 +23,7 @@ file_name = None
 # Global variables for URL and token
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 token = None  # This will store the token
-#                                                                      
+#                                     test                                 
 
 # Function to log in to NOMAD 
 def login_handler():
@@ -148,7 +148,7 @@ def generate_report():
         "SeparateScan": separate_scan_var.get(), 
         "EQE": eqe_var.get(),
         "MPP": mpp_var.get(),
-        "Table": table_var.get(),
+        "Table": table_var.get(), 
     }
     try:
         # Generate the PDF report
