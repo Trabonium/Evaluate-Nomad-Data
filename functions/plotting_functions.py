@@ -64,7 +64,7 @@ def plot_EQE_curves(result_df,nomad_url, token):
     fig, ax = plt.subplots()
     
     # Define a color palette for the groups
-    colors = plt.cm.viridis(np.linspace(0, 0.95, len(result_df['variation'].unique())))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(result_df['category'].unique())))
     
     # Set the color cycle for the axes
     ax.set_prop_cycle(color=colors)
@@ -118,7 +118,7 @@ def plot_MPP_curves(result_df, nomad_url, token):
     fig, ax = plt.subplots()
     
     # Define a color palette for the groups
-    colors = plt.cm.viridis(np.linspace(0, 0.95, len(df['variation'].unique())))
+    colors = plt.cm.viridis(np.linspace(0, 0.95, len(result_df['category'].unique())))
     
     # Set the color cycle for the axes
     ax.set_prop_cycle(color=colors)

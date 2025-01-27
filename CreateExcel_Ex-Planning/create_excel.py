@@ -234,9 +234,9 @@ process_config = {
 ## Process for SJ Spinbot gasquenched Maria
 #process_sequence = [
 #    {"process": "Experiment Info"},
-#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 2}},
+#    {"process": "Cleaning O2-Plasma", "config": {"solvents": 3}},
 #    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps": 1}},  # SAM
-#    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 5, "spinsteps": 2, "gasquenching": True}},  # PSK
+#    {"process": "Spin Coating", "config":  {"solvents": 2, "solutes": 5, "spinsteps": 2, "antisolvent": True}},  # PSK
 #    {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 2, "spinsteps": 1}},  # Passivation Sol
 #    {"process": "Evaporation"},  # Passivation Evap
 #    {"process": "Evaporation"},  # C60
@@ -450,6 +450,7 @@ process_config = {
 #     {"process": "Spin Coating", "config":  {"solvents": 1, "solutes": 1, "spinsteps":1 , "gasquenching": True}},   #Passivation Sol
 # ]
 
+#_____________________________________________________________
 
 # Create an instance of ExperimentExcelBuilder and build the Excel file
 #process_sequence = []

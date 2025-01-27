@@ -89,7 +89,7 @@ class ExperimentGUI(tk.Tk):
             return
         
         # Create an instance of ExperimentExcelBuilder with the updated sequence
-        builder = ExperimentExcelBuilder(self.process_sequence, process_config)
+        builder = ExperimentExcelBuilder(self.process_sequence, self.process_config)
 
         # Build and save the Excel file
         builder.build_excel()
