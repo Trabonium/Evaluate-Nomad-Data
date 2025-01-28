@@ -100,11 +100,37 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
 
 # Funktion, um die Schieberegler und den Speichern-Button hinzuzufügen
 def open_sliders_window(filter_window, df_min_max_bounds):
+    # Rahmen für Scrollbereich erstellen
+    container = ttk.Frame(filter_window)
+    container.pack(fill="both", expand=True)
+
+    # Canvas mit Scrollbar erstellen
+    canvas = tk.Canvas(container)
+    scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+    scrollable_frame = ttk.Frame(canvas)
+
+    # Scrollable Frame konfigurieren
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Platzierung der Canvas und Scrollbar
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    def _on_mouse_wheel(event):
+        canvas.yview_scroll(-1 * int(event.delta / 120), "units")  # Für Windows und macOS
+
+    canvas.bind_all("<MouseWheel>", _on_mouse_wheel)
 
     # Schieberegler erstellen
     for i, row in df_min_max_bounds.iterrows():
         create_dual_slider(
-            filter_window,
+            scrollable_frame,
             title=row['Parameter'],
             min_val=row['Min'],
             max_val=row['Max'],
@@ -118,8 +144,9 @@ def open_sliders_window(filter_window, df_min_max_bounds):
     def save_and_close():
         filter_window.destroy()  # Fenster schließen
 
-    save_button = ttk.Button(filter_window, text="save", command=save_and_close)
+    save_button = ttk.Button(scrollable_frame, text="Save", command=save_and_close)
     save_button.pack(pady=20)
+
 
 
 # Funktion zum Starten des Programms

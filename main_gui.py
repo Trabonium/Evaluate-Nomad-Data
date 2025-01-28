@@ -189,7 +189,18 @@ scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 canvas.configure(yscrollcommand=scrollbar.set)
 canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
-# Create a frame inside the canvas
+# Funktion für das Mausrad-Scrolling
+def _on_mouse_wheel(event):
+    canvas.yview_scroll(-1 * int(event.delta / 120), "units")  # Windows/macOS
+    # Linux (falls nötig):
+    # canvas.yview_scroll(-1 if event.num == 4 else 1, "units")
+
+# Binde das Mausrad an den Canvas
+canvas.bind_all("<MouseWheel>", _on_mouse_wheel)  # Für Windows/macOS
+canvas.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-1, "units"))  # Für Linux
+canvas.bind_all("<Button-5>", lambda e: canvas.yview_scroll(1, "units"))   # Für Linux
+
+# Frame innerhalb des Canvas erstellen
 frame = tk.Frame(canvas)
 canvas.create_window((0, 0), window=frame, anchor="nw")
 
