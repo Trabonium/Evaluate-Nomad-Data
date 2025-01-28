@@ -144,7 +144,7 @@ def open_sliders_window(filter_window, df_min_max_bounds):
             init_max=row['Max'],
             slider_id=i,
             update_df_func=update_df_func, 
-            first_slider=(i==0)
+            first_slider=(i==0) #first slider True bei erstem durchlauf. folge ist dass der erste vertikale strich geskipped wird
         )
 
     # Speichern-Button hinzufügen
