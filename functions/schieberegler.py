@@ -6,9 +6,14 @@ import pandas as pd
 #df_min_max_self = pd.DataFrame()
 
 # Funktion, um die Dual-Slider zu erstellen
-def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slider_id, update_df_func):
+def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slider_id, update_df_func, first_slider):
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.X, padx=20, pady=10)
+
+    # Horizontale Trennlinie nur hinzufügen, wenn es nicht der erste Slider ist
+    if not first_slider:
+        separator = ttk.Separator(frame, orient="horizontal")
+        separator.pack(fill=tk.X, padx=20, pady=5)
 
     title_label = ttk.Label(frame, text=title)
     title_label.pack(pady=5, padx=10)
@@ -20,6 +25,7 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     # Zeichne die Slider-Leiste
     canvas.create_line(10, 20, canvas_width - 10, 20, fill="grey", width=4)
 
+  
     # Initiale Positionen
     init_min_pos = 10 + ((init_min - min_val) / (max_val - min_val)) * (canvas_width - 20)
     init_max_pos = 10 + ((init_max - min_val) / (max_val - min_val)) * (canvas_width - 20)
@@ -137,7 +143,8 @@ def open_sliders_window(filter_window, df_min_max_bounds):
             init_min=row['Min'],
             init_max=row['Max'],
             slider_id=i,
-            update_df_func=update_df_func
+            update_df_func=update_df_func, 
+            first_slider=(i==0)
         )
 
     # Speichern-Button hinzufügen
