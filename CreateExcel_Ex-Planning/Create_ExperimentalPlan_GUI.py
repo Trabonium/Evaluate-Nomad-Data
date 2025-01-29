@@ -61,16 +61,16 @@ class ExperimentGUI(tk.Tk):
 
         if selected_process and selected_process != "Experiment Info":
             # Check if the selected process has additional parameters
-            self.process_details = process_config.get(selected_process, {})
+            process_details = process_config.get(selected_process, {})
 
-            if 'steps' in self.process_details:
+            if 'steps' in process_details:
                 pass
             else:
                 # No steps, add process details
-                self.process_details = self.get_process_inputs_gui()
+                process_details = self.get_process_inputs_gui(process_details)
 
             # Add the selected process to the sequence
-            self.process_sequence.append({"process": selected_process, "config": self.process_details})
+            self.process_sequence.append({"process": selected_process, "config": process_details.copy()})
             self.sequence_listbox.insert(tk.END, selected_process)
 
         else:
@@ -89,7 +89,7 @@ class ExperimentGUI(tk.Tk):
             return
         
         # Create an instance of ExperimentExcelBuilder with the updated sequence
-        builder = ExperimentExcelBuilder(self.process_sequence, self.process_config)
+        builder = ExperimentExcelBuilder(self.process_sequence, process_config)
 
         # Build and save the Excel file
         builder.build_excel()
@@ -99,7 +99,7 @@ class ExperimentGUI(tk.Tk):
 
         from tkinter import simpledialog
 
-    def get_process_inputs_gui(self):
+    def get_process_inputs_gui(self, process_details):
         """
         Dynamically get user inputs for all keys in the given dictionary via a GUI.
         :param process_details: Dictionary containing keys for expected inputs.
@@ -110,25 +110,25 @@ class ExperimentGUI(tk.Tk):
         root.withdraw()  # Hide the main window
 
         # Iterate through keys and get input
-        for key in self.process_details:
+        for key in process_details:
             while True:
                 user_input = simpledialog.askstring("Input", f"Enter value for '{key}':")
                 if user_input is None:  # User canceled
                     break
                 try:
                     # Attempt to convert the input to match the data type
-                    if isinstance(self.process_details[key], int):
-                        self.process_details[key] = int(user_input)
-                    elif isinstance(self.process_details[key], float):
-                        self.process_details[key] = float(user_input)
+                    if isinstance(process_details[key], int):
+                        process_details[key] = int(user_input)
+                    elif isinstance(process_details[key], float):
+                        process_details[key] = float(user_input)
                     else:
-                        self.process_details[key] = user_input  # Default to string
+                        process_details[key] = user_input  # Default to string
                     break  # Break the loop if successful
                 except ValueError:
                     tk.messagebox.showerror("Invalid Input", f"Invalid input for '{key}'. Please try again.")
 
         root.destroy()  # Close the tkinter app
-        return self.process_details
+        return process_details
 
 # Main function to run the GUI application
 def run_gui():
