@@ -77,12 +77,13 @@ def load_data():
         messagebox.showerror("Error", f"Failed to load data: {e}")
 
 def filter_data():
-    global filtered_data, data
+    global filtered_data, data, df_min_max_filter
     if 'data' not in globals():
         messagebox.showerror("Error", "Please load data first!")
         return
     try:
-        filtered_data = main_filter(data, master = root)
+        filtered_data, df_min_max_filter = main_filter(data, master = root)
+        canvas.bind_all("<MouseWheel>", _on_mouse_wheel) #neu anbinden, weil es in dem filter überschrieben wird
         messagebox.showinfo("Success", "Data filtered successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to filter data: {e}")
@@ -117,10 +118,10 @@ def csv_raw_export():
     return
 
 def csv_filtered_export():
-    global data, filtered_data
+    global data, filtered_data, df_min_max_filter
     csv_filtered_export_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], title="save csv")
     try:
-        generate_csv_filtered_file(csv_filtered_export_path, filtered_data, data)
+        generate_csv_filtered_file(csv_filtered_export_path, filtered_data, data, df_min_max_filter)
         messagebox.showinfo("Success", f"CSV file with filtered data saved to: {csv_filtered_export_path}")
         return
     except: 

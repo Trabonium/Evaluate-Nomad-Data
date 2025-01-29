@@ -105,7 +105,7 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
 
 
 # Funktion, um die Schieberegler und den Speichern-Button hinzuzufügen
-def open_sliders_window(filter_window, df_min_max_bounds):
+def open_sliders_window(filter_window, df_min_max_bounds, master):
     # Rahmen für Scrollbereich erstellen
     container = ttk.Frame(filter_window)
     container.pack(fill="both", expand=True)
@@ -149,7 +149,7 @@ def open_sliders_window(filter_window, df_min_max_bounds):
 
     # Speichern-Button hinzufügen
     def save_and_close():
-        filter_window.destroy()  # Fenster schließen
+        filter_window.destroy()
 
     save_button = ttk.Button(scrollable_frame, text="Save", command=save_and_close)
     save_button.pack(pady=20)
@@ -157,7 +157,7 @@ def open_sliders_window(filter_window, df_min_max_bounds):
 
 
 # Funktion zum Starten des Programms
-def schieberegler_main(filter_window, filtered_df):
+def schieberegler_main(filter_window, filtered_df, master):
     global df_min_max_self
 
     # Erstelle df_min_max_bounds mit Min- und Max-Werten
@@ -179,7 +179,7 @@ def schieberegler_main(filter_window, filtered_df):
 
     df_min_max_self = df_min_max_bounds.copy()
 
-    open_sliders_window(filter_window, df_min_max_bounds)
+    open_sliders_window(filter_window, df_min_max_bounds, master)
 
 
 # Update-Funktion für den DataFrame
@@ -198,7 +198,7 @@ def main_filter(df_default_werte, master):
     filter_window.title("Dual Sliders")
     filter_window.geometry("400x700")
 
-    schieberegler_main(filter_window, filtered_df) #hier werden die grenzenn zum filtern gesetzt
+    schieberegler_main(filter_window, filtered_df, master) #hier werden die grenzenn zum filtern gesetzt
 
     filter_window.grab_set()
     filter_window.wait_window()
@@ -220,4 +220,4 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df[(filtered_df['fill_factor'] >= min_ff) & (filtered_df['fill_factor'] <= max_ff)]
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
-    return(filtered_df)
+    return(filtered_df, df_min_max_self)
