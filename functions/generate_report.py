@@ -52,10 +52,14 @@ def generate_pdf_report(df, result_df, include_plots, report_title, nomad_url, t
         # Include JV Curves
         if include_plots.get('JV', False):
             fig_max = plot_JV_curves(result_df, 'maximum_efficiency', nomad_url, token)
+            #hier kommt ne bedingung hin
+            #fig_max.savefig(directory+"/Best_JV.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig_max, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_max)
 
             fig_med = plot_JV_curves(result_df, 'closest_median', nomad_url, token)
+            #hier kommt ne bedingung hin
+            #fig_med.savefig(directory+"/Median_JV.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig_med, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_med)
 
@@ -63,18 +67,24 @@ def generate_pdf_report(df, result_df, include_plots, report_title, nomad_url, t
         if include_plots.get('Box+Scatter', False):
             SeparateScanDir = include_plots.get('SeparateScan', False)
             fig = plot_box_and_scatter(df, 'variation', SeparateScanDir)
+            #hier kommt ne bedingung hin
+            #fig.savefig(directory+"/Box+Scatter.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig)
 
         # Include EQE Curves
         if include_plots.get('EQE', False):
             fig_eqe = plot_EQE_curves(result_df, nomad_url, token)
+            #hier kommt ne bedingung hin
+            #fig_eqe.savefig(directory+"/EQE.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig_eqe, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_eqe)
 
         # Include MPP Curves
         if include_plots.get('MPP', False):
             fig_mpp = plot_MPP_curves(result_df, nomad_url, token)
+            #hier kommt ne bedingung hin
+            #fig_mpp.savefig(directory+"/EQE.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig_mpp, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_mpp)
 
