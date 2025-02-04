@@ -24,77 +24,77 @@ def login_handler():
     username = username_entry.get()
     password = password_entry.get()
     if not username or not password:
-        messagebox.showerror("Error", "Bitte Benutzername und Passwort eingeben.")
+        messagebox.showerror("Error", "Please insert name and password.")
         return
     try:
         response = requests.get(f"{nomad_url}/auth/token", params={"username": username, "password": password})
         response.raise_for_status()
         token = response.json().get('access_token', None)
-        messagebox.showinfo("Login Erfolgreich", f"Eingeloggt als {username}")
+        messagebox.showinfo("Login Successfully", f"Logged in as {username}")
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Login Failed", f"Error: {e}")
 
 # Datei auswählen
 def select_file():
     global selected_file_path
-    selected_file_path = filedialog.askopenfilename(title="Excel-Datei auswählen", filetypes=[("Excel-Dateien", "*.xlsx")])
-    file_path_label.config(text=f"Ausgewählte Datei: {selected_file_path}" if selected_file_path else "Keine Datei ausgewählt")
+    selected_file_path = filedialog.askopenfilename(title="Choose Excel-file", filetypes=[("Excel-Dateien", "*.xlsx")])
+    file_path_label.config(text=f"Chosen data: {selected_file_path}" if selected_file_path else "No data chosen")
 
 # Daten laden
 def load_data():
     global data
     if not selected_file_path:
-        messagebox.showerror("Error", "Bitte zuerst eine Excel-Datei auswählen.")
+        messagebox.showerror("Error", "Please choose Excel first.")
         return
     try:
         data = get_data_excel_to_df(selected_file_path, nomad_url, token)
-        messagebox.showinfo("Erfolg", "Daten erfolgreich geladen!")
+        messagebox.showinfo("Success", "Data loaded!")
     except Exception as e:
-        messagebox.showerror("Error", f"Daten konnten nicht geladen werden: {e}")
+        messagebox.showerror("Error", f"Data could not be loaded: {e}")
 
 # Daten filtern
 def filter_data():
     global filtered_data
     if data is None:
-        messagebox.showerror("Error", "Bitte zuerst Daten laden!")
+        messagebox.showerror("Error", "Please load your data first!")
         return
     try:
         filtered_data, _ = main_filter(data, master=root)
         canvas.bind_all("<MouseWheel>", on_mouse_wheel)  # Für Windows
-        messagebox.showinfo("Erfolg", "Daten erfolgreich gefiltert!")
+        messagebox.showinfo("Success", "Data filtered!")
     except Exception as e:
-        messagebox.showerror("Fehler", f"Filtern fehlgeschlagen: {e}")
+        messagebox.showerror("Error", f"Filtering gone wrong: {e}")
 
 # Statistiken berechnen
 def calculate_stats():
     global stats
     if data is None:
-        messagebox.showerror("Fehler", "Bitte zuerst Daten laden!")
+        messagebox.showerror("Error", "Please load data first!")
         return
     try:
         stats = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
-        messagebox.showinfo("Erfolg", "Statistiken erfolgreich berechnet!")
+        messagebox.showinfo("Error", "Statistics calculated successfully!")
     except Exception as e:
-        messagebox.showerror("Fehler", f"Statistik-Berechnung fehlgeschlagen: {e}")
+        messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}")
 
 # CSV-Export-Funktionen
 def csv_raw_export():
     if data is None:
-        messagebox.showerror("Fehler", "Bitte zuerst Daten laden!")
+        messagebox.showerror("Error", "Please load data first!")
         return
     path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
     if path:
         generate_csv_raw_file(path, data)
-        messagebox.showinfo("Erfolg", f"CSV-Datei gespeichert: {path}")
+        messagebox.showinfo("Success", f"CSV file saved: {path}")
 
 def csv_filtered_export():
     if 'filtered_data' not in globals():
-        messagebox.showerror("Fehler", "Bitte zuerst Daten filtern!")
+        messagebox.showerror("Error", "Please filter data first!")
         return
     path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
     if path:
         generate_csv_filtered_file(path, filtered_data, data, None)
-        messagebox.showinfo("Erfolg", f"CSV-Datei gespeichert: {path}")
+        messagebox.showinfo("Success", f"CSV file saved: {path}")
 
 def generate_report():
     global data, stats, directory, file_name, filtered_data
@@ -130,8 +130,9 @@ def generate_report():
 
 # Hauptfenster erstellen
 root = tk.Tk()
-root.title("Datenanalyse GUI")
+root.title("Script for NOMAD data evaluation")
 root.geometry("600x600")
+#root.configure(bg="white")
 
 # Checkbox-Variablen für Plots
 jv_var = tk.BooleanVar(value=True)
@@ -157,6 +158,7 @@ main_frame.pack(fill=tk.BOTH, expand=True)
 canvas = tk.Canvas(main_frame)
 scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
 scrollable_frame = ttk.Frame(canvas)
+
 
 scrollable_frame.bind(
     "<Configure>",
@@ -184,7 +186,7 @@ canvas.bind_all("<MouseWheel>", on_mouse_wheel)  # Für Windows
 scrollable_frame.columnconfigure(0, weight=1)
 
 # Widgets ins `scrollable_frame` einfügen
-ttk.Label(scrollable_frame, text="NOMAD Login", font=("Helvetica", 12, "bold")).grid(row=0, column=0, pady=5, sticky="n")
+ttk.Label(scrollable_frame, text="NOMAD Login (name and password)", font=("Helvetica", 12, "bold")).grid(row=0, column=0, pady=5, sticky="n")
 
 username_entry = ttk.Entry(scrollable_frame, width=30)
 username_entry.grid(row=1, column=0, pady=5)
