@@ -132,7 +132,23 @@ def generate_report():
 root = tk.Tk()
 root.title("Script for NOMAD data evaluation")
 root.geometry("600x600")
-#root.configure(bg="white")
+
+# Funktion für Hover-Effekt für Buttons und Checkbuttons
+def apply_hover_effect(widget, normal_style, hover_style):
+    if isinstance(widget, ttk.Widget):  # Falls es ein ttk-Widget ist
+        widget.bind("<Enter>", lambda e: widget.configure(style=hover_style))
+        widget.bind("<Leave>", lambda e: widget.configure(style=normal_style))
+    else:  # Falls es ein tk-Widget ist (z. B. tk.Button, tk.Checkbutton)
+        widget.bind("<Enter>", lambda e: widget.config(bg="lightgray"))
+        widget.bind("<Leave>", lambda e: widget.config(bg="SystemButtonFace"))  # Standardfarbe
+
+
+# Styling mit ttk
+style = ttk.Style()
+style.configure("TButton", font=("Arial", 10), padding=5)
+style.configure("Hover.TButton", background="lightblue")  # Hover-Farbe für Buttons
+style.configure("TCheckbutton", font=("Arial", 10))
+style.configure("Hover.TCheckbutton", background="lightgray")  # Hover-Farbe für Checkbuttons
 
 # Checkbox-Variablen für Plots
 jv_var = tk.BooleanVar(value=True)
@@ -158,7 +174,6 @@ main_frame.pack(fill=tk.BOTH, expand=True)
 canvas = tk.Canvas(main_frame)
 scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
 scrollable_frame = ttk.Frame(canvas)
-
 
 scrollable_frame.bind(
     "<Configure>",
@@ -192,18 +207,30 @@ username_entry = ttk.Entry(scrollable_frame, width=30)
 username_entry.grid(row=1, column=0, pady=5)
 password_entry = ttk.Entry(scrollable_frame, width=30, show="*")
 password_entry.grid(row=2, column=0, pady=5)
-ttk.Button(scrollable_frame, text="Login", command=login_handler).grid(row=3, column=0, pady=5)
 
-ttk.Button(scrollable_frame, text="Select File", command=select_file).grid(row=4, column=0, pady=5)
-file_path_label = ttk.Label(scrollable_frame, text="Keine Datei ausgewählt", foreground="gray")
+# Buttons mit Hover-Effekt erstellen
+buttons = [
+    ttk.Button(scrollable_frame, text="Login", command=login_handler),
+    ttk.Button(scrollable_frame, text="Select File", command=select_file),
+    ttk.Button(scrollable_frame, text="Load corresponding Data from NOMAD OASIS", command=load_data),
+    ttk.Button(scrollable_frame, text="Filter your data", command=filter_data),
+    ttk.Button(scrollable_frame, text="Calculate Statistics", command=calculate_stats),
+    ttk.Button(scrollable_frame, text="Generate CSV (raw data)", command=csv_raw_export),
+    ttk.Button(scrollable_frame, text="Generate CSV (filtered data)", command=csv_filtered_export),
+    ttk.Button(scrollable_frame, text="Generate Report", command=generate_report),
+]
+
+# Platzierung der Buttons + Hover-Funktion aktivieren
+row_index = 3
+for button in buttons:
+    if row_index == 5:  # Überspringe Zeile 5
+        row_index += 1
+    button.grid(row=row_index, column=0, pady=5)
+    apply_hover_effect(button, "TButton", "Hover.TButton")
+    row_index += 1
+
+file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
 file_path_label.grid(row=5, column=0, pady=5)
-
-ttk.Button(scrollable_frame, text="Load corresponding Data from NOMAD OASIS", command=load_data).grid(row=6, column=0, pady=10)
-ttk.Button(scrollable_frame, text="filter your data", command=filter_data).grid(row=7, column=0, pady=10)
-ttk.Button(scrollable_frame, text="Calculate Statistics", command=calculate_stats).grid(row=8, column=0, pady=10)
-ttk.Button(scrollable_frame, text="generate csv (raw data)", command=csv_raw_export).grid(row=9, column=0, pady=10)
-ttk.Button(scrollable_frame, text="Generate csv (filtered data)", command=csv_filtered_export).grid(row=10, column=0, pady=10)
-ttk.Button(scrollable_frame, text="Generate Report", command=generate_report).grid(row=11, column=0, pady=10)
 
 # Toggle-Funktion für Plot-Optionen
 def toggle_plot_options():
@@ -217,14 +244,17 @@ def toggle_plot_options():
 # Button für das Ein-/Ausklappen der Checkboxen
 toggle_button = tk.Button(scrollable_frame, text="▶ Show Plot Options", command=toggle_plot_options)
 toggle_button.grid(row=12, column=0, pady=10)
+apply_hover_effect(toggle_button, "TButton", "Hover.TButton")
 
 # Frame für die Checkboxen (zunächst versteckt)
 plot_options_frame = tk.Frame(scrollable_frame)
 plot_options_frame.grid(row=13, column=0, pady=5, sticky="n")
 plot_options_frame.grid_remove()  # Startet versteckt
 
-# Checkboxen erstellen
+# Checkboxen erstellen und Hover-Effekt hinzufügen
 for idx, (text, var) in enumerate(selected_plots):
-    tk.Checkbutton(plot_options_frame, text=text, variable=var).grid(row=idx, column=0, sticky="w", padx=10)
+    check = ttk.Checkbutton(plot_options_frame, text=text, variable=var, style="TCheckbutton")
+    check.grid(row=idx, column=0, sticky="w", padx=10)
+    apply_hover_effect(check, "TCheckbutton", "Hover.TCheckbutton")
 
 root.mainloop()
