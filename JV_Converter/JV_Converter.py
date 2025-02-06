@@ -10,6 +10,17 @@ def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+def show_auto_close_message(title, message, timeout=3000):
+    msg_window = tk.Toplevel()
+    msg_window.title(title)
+    msg_window.geometry("300x100")
+    
+    label = ttk.Label(msg_window, text=message, wraplength=280)
+    label.pack(expand=True, padx=10, pady=10)
+    
+    msg_window.after(timeout, msg_window.destroy)  # Auto close after timeout (in ms)
+    msg_window.mainloop()
+
 def move_mpp_files(path):
     newdirMPP = os.path.join(path, "MaxPowerPointTracking")
     create_directory(newdirMPP)
@@ -28,34 +39,32 @@ def move_mpp_files(path):
             writer = csv.writer(output_file)
             writer.writerows(lines)
 
+        shutil.move(file, dst)
         
-        if file.endswith("MPP.csv"):
-            if ".px" in os.path.basename(file):
-                os.rename(file, file[:-20] + ".csv")
-                if ".mpp.csv" in os.path.basename(file):
+        if dst.endswith("MPP.csv"):
+            if ".px" in os.path.basename(dst):
+                new_dst = dst[:-20] + ".csv"
+                os.rename(dst, new_dst)
+                dst = new_dst
+                if ".mpp.csv" in os.path.basename(dst):
                     pass
                 else:
-                    os.rename(file, file[:-4] + ".mpp.csv")
+                    os.rename(dst, dst[:-4] + ".mpp.csv")
             else:
-                pxnumber = file.split("_")[-4][2]
-                os.rename(file, file[:-20] + f".px{pxnumber}.mpp.csv")
+                pxnumber = dst.split("_")[-4][2]
+                os.rename(dst, dst[:-20] + f".px{pxnumber}.mpp.csv")
 
-        if file.endswith("MPP_FULL.csv"):
-            pass
+    show_auto_close_message("Success", "Moved and updated MPP files.", 2000)
 
-
-        shutil.move(file, dst)
-    messagebox.showinfo("Success", "Moved and updated MPP files.")
-
-def move_soak_files(path, cycle_to_keep):
+def move_soak_files(path, cycle_to_keep, preserve_cycle):
     newdirSoak = os.path.join(path, "Soak")
     create_directory(newdirSoak)
     
     for file in glob.iglob(os.path.join(path, f"*Cycle_[0-9]_illu*")):
-        if f"Cycle_{cycle_to_keep}_illu" not in file:
+        if not preserve_cycle and f"Cycle_{cycle_to_keep}_illu" not in file:
             dst = os.path.join(newdirSoak, os.path.basename(file))
             shutil.move(file, dst)
-    messagebox.showinfo("Success", "Moved Soak files.")
+    show_auto_close_message("Success", "Moved Soak files.", 2000)
 
 def rename_files(path, cycle_to_keep):
     rename_patterns = {
@@ -71,7 +80,7 @@ def rename_files(path, cycle_to_keep):
             basename_old = os.path.basename(file)
             new_name = os.path.join(path, basename_old.replace(pattern.split("*")[1], replacement))
             os.rename(file, new_name)
-    messagebox.showinfo("Success", "Files renamed successfully.")
+    show_auto_close_message("Success", "Files renamed successfully.", 2000)
 
 def browse_directory():
     path = filedialog.askdirectory(title="Select Directory")
@@ -82,6 +91,7 @@ def browse_directory():
 def start_processing():
     path = entry_path.get()
     cycle_to_keep = entry_cycle.get()
+    preserve_cycle = preserve_cycle_var.get()
     
     if not path or not os.path.exists(path):
         messagebox.showerror("Error", "Please select a valid directory.")
@@ -91,10 +101,10 @@ def start_processing():
         messagebox.showerror("Error", "Enter a valid cycle number (0-9).")
         return
     
-    confirmation = messagebox.askyesno("Confirmation", f"Apply renaming and sorting in:{path}\nKeeping Cycle: {cycle_to_keep}")
+    confirmation = messagebox.askyesno("Confirmation", f"Apply renaming and sorting in:\n{path}\nKeeping Cycle: {cycle_to_keep}\nPreserve cycle info: {preserve_cycle}")
     if confirmation:
         move_mpp_files(path)
-        move_soak_files(path, cycle_to_keep)
+        move_soak_files(path, cycle_to_keep, preserve_cycle)
         rename_files(path, cycle_to_keep)
         messagebox.showinfo("Done", "All tasks completed successfully.")
 
@@ -118,7 +128,11 @@ ttk.Label(frame, text="Enter Cycle to Keep (0-9):").grid(row=2, column=0, sticky
 entry_cycle = ttk.Entry(frame, width=10)
 entry_cycle.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
+# Preserve Cycle Checkbox
+preserve_cycle_var = tk.BooleanVar()
+ttk.Checkbutton(frame, text="Preserve cycle information", variable=preserve_cycle_var).grid(row=4, column=0, sticky="w", pady=5)
+
 # Start Button
-ttk.Button(frame, text="Start Renaming", command=start_processing).grid(row=4, column=0, columnspan=2, pady=10)
+ttk.Button(frame, text="Start Renaming", command=start_processing).grid(row=5, column=0, columnspan=2, pady=10)
 
 root.mainloop()
