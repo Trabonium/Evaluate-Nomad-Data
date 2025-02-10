@@ -13,6 +13,7 @@ from functions.schieberegler import main_filter
 selected_file_path = None
 data = None
 stats = None
+best = None
 token = None
 directory = None
 file_name = None
@@ -81,13 +82,13 @@ def filter_data():
 
 # Statistiken berechnen
 def calculate_stats():
-    global stats, data, filtered_data
+    global stats, data, filtered_data, best
     if data is None:
         messagebox.showerror("Error", "Please load data first!")
         return
     try:
-        stats = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
-        messagebox.showinfo("Error", "Statistics calculated successfully!")
+        stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
+        show_auto_close_message("Sucess", "Statistics calculated successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}")
 
@@ -111,7 +112,7 @@ def csv_filtered_export():
         show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
 def generate_report():
-    global data, stats, directory, file_name, filtered_data
+    global data, stats, directory, file_name, filtered_data, best
 
     if data is None or stats is None:
         messagebox.showerror("Error", "Please load data and calculate statistics first.")
@@ -132,11 +133,11 @@ def generate_report():
         return
 
     try:
-        directory, file_name = generate_pdf_report(filtered_data, stats, selected_plots_uebergeben, file_path, nomad_url, token)
+        directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
         show_auto_close_message("Success", f"PDF report with filtered data saved to: {file_path}", 2000)
     except:
         try:
-            directory, file_name = generate_pdf_report(data, stats, selected_plots_uebergeben, file_path, nomad_url, token)
+            directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
             show_auto_close_message("Success", f"PDF report with raw data saved to: {file_path}", 2000)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")

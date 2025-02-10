@@ -64,6 +64,7 @@ def move_soak_files(path, cycle_to_keep, preserve_cycle):
         if not preserve_cycle and f"Cycle_{cycle_to_keep}_illu" not in file:
             dst = os.path.join(newdirSoak, os.path.basename(file))
             shutil.move(file, dst)
+        #Add preserve cycle fuction with "_" after .px
     show_auto_close_message("Success", "Moved Soak files.", 2000)
 
 def rename_files(path, cycle_to_keep):
