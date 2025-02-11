@@ -56,7 +56,7 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
-def plot_EQE_curves(result_df,nomad_url, token):
+def plot_EQE_curves(df, result_df, nomad_url, token):
     max_EQE = .0
     wellenlenge_min = np.inf
     wellenlenge_max = .0
@@ -70,8 +70,26 @@ def plot_EQE_curves(result_df,nomad_url, token):
     ax.set_prop_cycle(color=colors)
     
     for index, row in result_df.iterrows():
-        #Data from server
-        eqe_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'EQEmeasurement', nomad_url, token)
+        try:
+            # Data from server
+            eqe_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'], 'EQEmeasurement', nomad_url, token)
+            # See if data is returned
+            eqe_data[0]
+        except IndexError:
+            # Sort df by maximum efficiency and try again
+            variation = row['variation']
+            sorted_df = df[df['variation'] == variation].sort_values(by='efficiency', ascending=False)
+            for _, sorted_row in sorted_df.iterrows():
+                try:
+                    eqe_data = get_specific_data_of_sample(sorted_row[f'sample_id'], 'EQEmeasurement', nomad_url, token)
+                    eqe_data[0]
+                    break
+                except IndexError:
+                    continue
+            else:
+                # If no valid data is found, skip this row
+                continue
+        
         #Relevant arrays
         wavelength_array = eqe_data[0]['eqe_data'][0]['wavelength_array']
         eqe_array = [w * 100 for w in eqe_data[0]['eqe_data'][0]['eqe_array']]
@@ -113,7 +131,7 @@ def plot_EQE_curves(result_df,nomad_url, token):
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
-def plot_MPP_curves(result_df, nomad_url, token):
+def plot_MPP_curves(df, result_df, nomad_url, token):
     
     fig, ax = plt.subplots()
     
@@ -125,7 +143,25 @@ def plot_MPP_curves(result_df, nomad_url, token):
     
     for index, row in result_df.iterrows():
         #Data from server
-        mpp_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'MPPTracking', nomad_url, token)
+        try:
+            # Data from server
+            mpp_data = get_specific_data_of_sample(row[f'maximum_efficiency_id'],'MPPTracking', nomad_url, token)            # See if data is returned
+            mpp_data[0]
+        except IndexError:
+            # Sort df by maximum efficiency and try again
+            variation = row['variation']
+            sorted_df = df[df['variation'] == variation].sort_values(by='efficiency', ascending=False)
+            for _, sorted_row in sorted_df.iterrows():
+                try:
+                    mpp_data = get_specific_data_of_sample(sorted_row[f'sample_id'], 'MPPTracking', nomad_url, token)
+                    mpp_data[0]
+                    break
+                except IndexError:
+                    continue
+            else:
+                # If no valid data is found, skip this row
+                continue
+
         #Relevant arrays
         time_array = mpp_data[0]['time']
         pce_array = mpp_data[0]['efficiency']
@@ -135,7 +171,7 @@ def plot_MPP_curves(result_df, nomad_url, token):
         ax.plot(time_array, pce_array, label=f"{row['category']}", color=colors[index])
         print(row[f'maximum_efficiency_id'])
                         
-
+ 
     # Plot settings
     ax.legend()
     ax.set_xlim(0, 300)
@@ -272,7 +308,7 @@ def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
         # Axis label and Ticks
         ax.set_ylabel(f"{jv_quantity_labels[jv_quantity[i]]}", size=16)
         ax.set_xticks([i + 1 for i in range(len(sorted_variations))])
-        ax.set_xticklabels(sorted_variations, size=14, rotation=45 if len(sorted_variations) > 5 else 0, ha='right')
+        ax.set_xticklabels(sorted_variations, size=14, rotation=45 if len(sorted_variations) > 4 else 0, ha='right' if len(sorted_variations) > 4 else 'center')
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10])) 
         ax.tick_params(axis='both', labelsize=14)
         ax.grid(axis='y', color='grey', linestyle='--', linewidth=0.5, alpha=0.5) 

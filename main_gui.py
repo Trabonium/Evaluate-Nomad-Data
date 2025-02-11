@@ -13,10 +13,24 @@ from functions.schieberegler import main_filter
 selected_file_path = None
 data = None
 stats = None
+best = None
 token = None
 directory = None
 file_name = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
+
+
+def show_auto_close_message(title, message, timeout=3000):
+    msg_window = tk.Toplevel()
+    msg_window.title(title)
+    msg_window.geometry("300x100")
+    
+    label = ttk.Label(msg_window, text=message, wraplength=280)
+    label.pack(expand=True, padx=10, pady=10)
+    
+    msg_window.after(timeout, msg_window.destroy)  # Auto close after timeout (in ms)
+    msg_window.mainloop()
+
 
 # Login-Funktion
 def login_handler():
@@ -30,7 +44,7 @@ def login_handler():
         response = requests.get(f"{nomad_url}/auth/token", params={"username": username, "password": password})
         response.raise_for_status()
         token = response.json().get('access_token', None)
-        messagebox.showinfo("Login Successfully", f"Logged in as {username}")
+        show_auto_close_message("Login Successfully", f"Logged in as {username}", 2000)
     except requests.exceptions.RequestException as e:
         messagebox.showerror("Login Failed", f"Error: {e}")
 
@@ -49,7 +63,7 @@ def load_data():
     try:
         data = get_data_excel_to_df(selected_file_path, nomad_url, token)
         print(data)
-        messagebox.showinfo("Success", "Data loaded!")
+        show_auto_close_message("Success", "Data loaded!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Data could not be loaded: {e}")
 
@@ -62,19 +76,19 @@ def filter_data():
     try:
         filtered_data, _ = main_filter(data, master=root)
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
-        messagebox.showinfo("Success", "Data filtered!")
+        show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Filtering gone wrong: {e}")
 
 # Statistiken berechnen
 def calculate_stats():
-    global stats, data, filtered_data
+    global stats, data, filtered_data, best
     if data is None:
         messagebox.showerror("Error", "Please load data first!")
         return
     try:
-        stats = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
-        messagebox.showinfo("Error", "Statistics calculated successfully!")
+        stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
+        show_auto_close_message("Sucess", "Statistics calculated successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}")
 
@@ -86,7 +100,7 @@ def csv_raw_export():
     path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
     if path:
         generate_csv_raw_file(path, data)
-        messagebox.showinfo("Success", f"CSV file saved: {path}")
+        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
 def csv_filtered_export():
     if 'filtered_data' not in globals():
@@ -95,10 +109,10 @@ def csv_filtered_export():
     path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
     if path:
         generate_csv_filtered_file(path, filtered_data, data, None)
-        messagebox.showinfo("Success", f"CSV file saved: {path}")
+        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
 def generate_report():
-    global data, stats, directory, file_name, filtered_data
+    global data, stats, directory, file_name, filtered_data, best
 
     if data is None or stats is None:
         messagebox.showerror("Error", "Please load data and calculate statistics first.")
@@ -120,12 +134,12 @@ def generate_report():
         return
 
     try:
-        directory, file_name = generate_pdf_report(filtered_data, stats, selected_plots_uebergeben, file_path, nomad_url, token)
-        messagebox.showinfo("Success", f"PDF report with filtered data saved to: {file_path}")
+        directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
+        show_auto_close_message("Success", f"PDF report with filtered data saved to: {file_path}", 2000)
     except:
         try:
-            directory, file_name = generate_pdf_report(data, stats, selected_plots_uebergeben, file_path, nomad_url, token)
-            messagebox.showinfo("Success", f"PDF report with raw data saved to: {file_path}")
+            directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
+            show_auto_close_message("Success", f"PDF report with raw data saved to: {file_path}", 2000)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
 
