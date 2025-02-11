@@ -109,6 +109,7 @@ def generate_report():
         "JV": jv_var.get(),
         "Box+Scatter": box_var.get(),
         "SeparateScan": separate_scan_var.get(), 
+        "Hysteresis": hysteresis.get(),
         "EQE": eqe_var.get(),
         "MPP": mpp_var.get(),
         "Table": table_var.get(), 
@@ -260,7 +261,8 @@ plot_options_frame.grid_remove()
 # Checkbox-Variablen für Plots
 jv_var = tk.BooleanVar(value=True)
 box_var = tk.BooleanVar(value=True)
-separate_scan_var = tk.BooleanVar(value=False)
+separate_scan_var = tk.BooleanVar(value=True)
+hysteresis = tk.BooleanVar(value=False)
 eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
@@ -270,6 +272,7 @@ plot_options = [
     ("JV Curves", jv_var, "Plots the median and best JVs for each variation."),
     ("Box + Scatter Plots", box_var, "Plots the box and scatter plots for your batch statistics."),
     ("Separate Backwards/Forwards", separate_scan_var, "Adds the reverse and forwards differentiation to your box and scatter plots."),
+    ("Hysteresis plot", hysteresis, "Plots the hysteresis as a box + scatter plot."),
     ("EQE Curves", eqe_var, "Plot EQE data."),
     ("MPP Curves", mpp_var, "Plots the MPP tracking."),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF.")

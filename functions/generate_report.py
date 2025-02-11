@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from functions.plotting_functions import plot_JV_curves, plot_box_and_scatter, plot_EQE_curves, plot_MPP_curves
+from functions.plotting_functions import plot_JV_curves, plot_box_and_scatter, plot_EQE_curves, plot_MPP_curves, plot_hysteresis
 
 ### Updated Function to Generate PDF Report ###__________________________________________________________________________
 
@@ -67,6 +67,13 @@ def generate_pdf_report(df, result_df, include_plots, report_title, nomad_url, t
         if include_plots.get('Box+Scatter', False):
             SeparateScanDir = include_plots.get('SeparateScan', False)
             fig = plot_box_and_scatter(df, 'variation', SeparateScanDir)
+            #hier kommt ne bedingung hin
+            #fig.savefig(directory+"/Box+Scatter.png", dpi = 500, bbox_inches = "tight")
+            pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
+            plt.close(fig)
+
+        if include_plots.get('Hysteresis', False):
+            fig = plot_hysteresis(df)
             #hier kommt ne bedingung hin
             #fig.savefig(directory+"/Box+Scatter.png", dpi = 500, bbox_inches = "tight")
             pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
