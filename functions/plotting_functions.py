@@ -346,8 +346,6 @@ def plot_hysteresis(df): #quantity is here default 'variation'
 
     df_quotient = pd.DataFrame(quotient_data)
 
-    print('df_quotient: ', df_quotient)
-
     # Farben für die Boxplots
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df_quotient['variation'].unique())))
     colors = base_colors
