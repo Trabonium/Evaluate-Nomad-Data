@@ -54,8 +54,8 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     def update_label():
         current_min = df_min_max_self.at[slider_id, 'Min']
         current_max = df_min_max_self.at[slider_id, 'Max']
-        min_var.set(round(current_min, 2))
-        max_var.set(round(current_max, 2))
+        min_var.set(current_min)
+        max_var.set(current_max)
 
     # Aktualisiere Schieberegler aus Eingabefeldern
     def update_from_entry(event=None):

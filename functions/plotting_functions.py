@@ -330,3 +330,71 @@ def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
     plt.tight_layout()
     
     return fig
+
+#hysteresis plot function
+def plot_hysteresis(df): #quantity is here default 'variation'
+    # Berechnung der Quotienten für jede Variation
+    quotient_data = []
+    for i, variation in enumerate(df['variation'].unique()):
+        subset = df[df['variation'] == variation]
+        backwards = subset[subset['scan_direction'] == 'backwards']['efficiency'].values
+        forwards = subset[subset['scan_direction'] == 'forwards']['efficiency'].values
+        
+        quotient = (backwards - forwards) / backwards  # Elementweise Division
+        for q in quotient:
+            quotient_data.append({'variation': variation, 'quotient': q})
+
+    df_quotient = pd.DataFrame(quotient_data)
+
+    # Farben für die Boxplots
+    base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df_quotient['variation'].unique())))
+    colors = base_colors
+
+    # Sortiere die Variationen
+    sorted_variations = sorted(df_quotient['variation'].unique())
+
+    # Boxplot-Setup
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    positions = [i + 1 for i in range(len(sorted_variations))]  # X-Positionen
+
+    # Boxplots erstellen
+    medianprops = dict(color='red')
+
+    for j, (group, color) in enumerate(zip(sorted_variations, colors)):
+        group_data = df_quotient[df_quotient['variation'] == group]['quotient'].dropna()
+        group_position = positions[j]
+
+        # Boxplot zeichnen
+        ax.boxplot(group_data, positions=[group_position], showmeans=False, showfliers=False, widths=0.4, patch_artist=True,
+                boxprops=dict(facecolor=color, color='black'),
+                medianprops=medianprops)
+
+    # Scatterplot überlagern
+    for j, group in enumerate(sorted_variations):
+        group_data = df_quotient[df_quotient['variation'] == group]['quotient'].dropna()
+        group_position = positions[j]
+
+        # Jitter für Streuung hinzufügen
+        jittered_x = np.random.normal(loc=group_position, scale=0.05, size=len(group_data))
+        ax.scatter(jittered_x, group_data, color='black', alpha=0.9, zorder=2, s=25)
+
+    # Achsenbeschriftung
+    ax.set_ylabel("Hysteresis", size=16)
+    ax.set_xticks(positions)
+    ax.set_xticklabels(sorted_variations, size=14)
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10])) 
+    ax.tick_params(axis='both', labelsize=14)
+    ax.grid(axis='y', color='grey', linestyle='--', linewidth=0.5, alpha=0.5) 
+
+    # Rahmen & Achsenticks formatieren
+    ax.spines['bottom'].set_linewidth(2)
+    ax.spines['left'].set_linewidth(2)
+    ax.spines['top'].set_linewidth(2)
+    ax.spines['right'].set_linewidth(2)
+    ax.tick_params(axis='both', right=True, top=True, direction='in', width=2, colors='black', length=5)
+
+    # Layout anpassen und Plot anzeigen
+    plt.tight_layout()
+    
+    return fig
