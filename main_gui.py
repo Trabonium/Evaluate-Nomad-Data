@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import requests
 import pandas as pd 
+import os
 
 from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
@@ -143,11 +144,6 @@ def generate_report():
             messagebox.showerror("Error", f"Failed to generate report: {e}")
 
 
-# Hauptfenster erstellen
-root = tk.Tk()
-root.title("Script for NOMAD data evaluation")
-root.geometry("600x600")
-
 # Funktion für Hover-Effekt für Buttons und Checkbuttons
 def apply_hover_effect(widget, normal_style, hover_style):
     if isinstance(widget, ttk.Widget):  
@@ -176,6 +172,22 @@ def hide_tooltip(event):
     if tooltip_window:
         tooltip_window.destroy()
         tooltip_window = None
+
+# Toggle-Funktion für Plot-Optionen
+def toggle_plot_options():
+    if plot_options_frame.winfo_ismapped():
+        plot_options_frame.grid_remove()
+        toggle_button.config(text="▶ Show Plot Options")
+    else:
+        plot_options_frame.grid(row=13, column=0, pady=5, sticky="n")
+        toggle_button.config(text="▼ Hide Plot Options")
+
+# Hauptfenster erstellen
+root = tk.Tk()
+root.title("Script for NOMAD data evaluation")
+root.geometry("600x600")
+#root.iconbitmap(os.path.join(os.path.dirname(__file__), "GUI.ico"))
+
 
 # Styling mit ttk
 style = ttk.Style()
@@ -226,7 +238,7 @@ password_help.bind("<Leave>", hide_tooltip)
 # Buttons mit tatsächlichen Funktionsaufrufen
 buttons_info = [
     ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
-    ("Select File", select_file, "Choose Excel file to download your wanted data."),
+    ("Select File", select_file, "Choose Excel file to download your wanted data. If you need data from multiple batches, merge your experimental Planning excel files - but DO NOT UPLOAD TO NOMAD TWICE!"),
     ("Load corresponding Data from NOMAD OASIS", load_data, "Download data with the choosen Excel file."),
     ("Filter your data", filter_data, "Filter your data if wished (optional and repeatable)."),
     ("Calculate Statistics", calculate_stats, "Calculate the statistics of your data."),
@@ -253,14 +265,7 @@ for text, command, tooltip in buttons_info:
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
 file_path_label.grid(row=5, column=0, pady=5)
 
-# Toggle-Funktion für Plot-Optionen
-def toggle_plot_options():
-    if plot_options_frame.winfo_ismapped():
-        plot_options_frame.grid_remove()
-        toggle_button.config(text="▶ Show Plot Options")
-    else:
-        plot_options_frame.grid(row=13, column=0, pady=5, sticky="n")
-        toggle_button.config(text="▼ Hide Plot Options")
+
 
 toggle_button = tk.Button(scrollable_frame, text="▶ Show Plot Options", command=toggle_plot_options)
 toggle_button.grid(row=12, column=0, pady=10)

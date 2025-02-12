@@ -77,7 +77,7 @@ def plot_EQE_curves(df, result_df, nomad_url, token):
             eqe_data[0]
         except IndexError:
             # Sort df by maximum efficiency and try again
-            variation = row['variation']
+            variation = row['category']
             sorted_df = df[df['variation'] == variation].sort_values(by='efficiency', ascending=False)
             for _, sorted_row in sorted_df.iterrows():
                 try:
@@ -149,7 +149,7 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
             mpp_data[0]
         except IndexError:
             # Sort df by maximum efficiency and try again
-            variation = row['variation']
+            variation = row['category']
             sorted_df = df[df['variation'] == variation].sort_values(by='efficiency', ascending=False)
             for _, sorted_row in sorted_df.iterrows():
                 try:
