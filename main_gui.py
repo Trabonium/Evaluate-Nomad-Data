@@ -128,6 +128,7 @@ def generate_report():
         "EQE": eqe_var.get(),
         "MPP": mpp_var.get(),
         "Table": table_var.get(), 
+        "Picture": picture_var.get(),
     }
 
     file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
@@ -266,8 +267,6 @@ for text, command, tooltip in buttons_info:
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
 file_path_label.grid(row=5, column=0, pady=5)
 
-
-
 toggle_button = tk.Button(scrollable_frame, text="▶ Show Plot Options", command=toggle_plot_options)
 toggle_button.grid(row=12, column=0, pady=10)
 apply_hover_effect(toggle_button, "TButton", "Hover.TButton")
@@ -285,6 +284,7 @@ hysteresis = tk.BooleanVar(value=False)
 eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
+picture_var = tk.BooleanVar(value=True)
 
 # Checkboxen
 plot_options = [
@@ -294,7 +294,8 @@ plot_options = [
     ("Hysteresis plot", hysteresis, "Plots the hysteresis as a box + scatter plot."),
     ("EQE Curves", eqe_var, "Plot EQE data."),
     ("MPP Curves", mpp_var, "Plots the MPP tracking."),
-    ("Data Table", table_var, "Adds a table with the most important informations to your PDF.")
+    ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
+    ("Generate pictures", picture_var, "Generates extra pictures of the plots.")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):
