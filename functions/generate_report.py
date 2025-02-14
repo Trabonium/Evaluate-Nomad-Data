@@ -45,8 +45,10 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
                               - 'MPP'
                               - 'Table'
     """
-    # Round numerical values in result_df
-    rounded_result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+    # Round numerical values in result_df #change due to futurewarning
+    #rounded_result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+    rounded_result_df = result_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+
 
     with PdfPages(report_title) as pdf:
         # Include JV Curves
@@ -96,9 +98,13 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
             plt.close(fig_mpp)
 
 
-        # Round all numerical values to 2 decimal places
-        result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-        best_df = best_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+        # Round all numerical values to 2 decimal places     old version due to futurewarning
+        #result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+        #best_df = best_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+
+        result_df = result_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+        best_df = best_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+
 
         # Insert line breaks in 'ID' fields (or any other long columns)
         for col in result_df.columns:
