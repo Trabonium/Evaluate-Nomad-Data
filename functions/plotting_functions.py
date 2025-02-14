@@ -27,16 +27,19 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
                         ax.plot(cell["jv_curve"][i]["voltage"], \
                                  cell["jv_curve"][i]["current_density"], \
                                  label=f"{row['category']}: {round(PCE,2)}%")
-                        print(cell["name"])
+                        #print(cell["name"])
                         break
 
     # Plot settings
     ax.legend()
     ax.set_xlim(-0.2, 1.3)
     ax.set_ylim(-5, 25)
-    ax.set_title(f'{curve_type.capitalize()} JV Curves', fontsize=16)
+    #ax.set_title(f'{curve_type.capitalize()} JV Curves', fontsize=16)
     ax.set_xlabel('Voltage (V)', fontsize=12)
-    ax.set_ylabel('Current Density(mA/cm²)', fontsize=12)
+    if curve_type == 'maximum_efficiency':
+        ax.set_ylabel('(Best) Current Density (mA/cm²)', fontsize=12)
+    else:
+        ax.set_ylabel('(Median) Current Density (mA/cm²)', fontsize=12)
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
@@ -232,10 +235,10 @@ def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
     jv_quantity = ['efficiency', 'open_circuit_voltage', 'fill_factor', 'short_circuit_current_density']
     
     jv_quantity_labels = {
-        'open_circuit_voltage': r"$V_{oc} \, (V)$",
-        'fill_factor': "FF (%)",
+        'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
+        'fill_factor': "FF",
         'efficiency': "PCE (%)",
-        'short_circuit_current_density': r"$J_{sc} \, (mA/cm²)$"
+        'short_circuit_current_density': r"$\mathrm{J_{sc} \, (mA/cm²)}$"
     }
 
     fig, axes = plt.subplots(2, 2, figsize=(15, 10))  # 2x2 grid of subplots
