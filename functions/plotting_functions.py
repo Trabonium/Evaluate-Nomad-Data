@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import math
 from functions.api_calls_get_data import get_specific_data_of_sample
+#import seaborn as sns #for the old box and scatter plot
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
@@ -16,6 +16,7 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
     
     # Set the color cycle for the axes
     ax.set_prop_cycle(color=colors)
+    max_Voc = 0
     PCE = None
     for index, row in result_df.iterrows():
         jv_data = get_specific_data_of_sample(row[f'{curve_type}_id'], "JVmeasurement", nomad_url, token)
@@ -27,12 +28,17 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
                         ax.plot(cell["jv_curve"][i]["voltage"], \
                                  cell["jv_curve"][i]["current_density"], \
                                  label=f"{row['category']}: {round(PCE,2)}%")
+                        if max_Voc < max(cell["jv_curve"][i]["voltage"]):
+                            max_Voc = max(cell["jv_curve"][i]["voltage"])
                         #print(cell["name"])
                         break
 
     # Plot settings
     ax.legend()
-    ax.set_xlim(-0.2, 1.3)
+    if max_Voc < 1.3:
+        ax.set_xlim(-0.2, 1.3)
+    else:   
+        ax.set_xlim(-0.2, ((math.ceil(max_Voc * 10))/10) + 0.1) 
     ax.set_ylim(-5, 25)
     #ax.set_title(f'{curve_type.capitalize()} JV Curves', fontsize=16)
     ax.set_xlabel('Voltage (V)', fontsize=12)
