@@ -178,11 +178,12 @@ def hide_tooltip(event):
 # Toggle-Funktion für Plot-Optionen
 def toggle_plot_options():
     if plot_options_frame.winfo_ismapped():
-        plot_options_frame.grid_remove()
-        toggle_button.config(text="▶ Show Plot Options")
+        plot_options_frame.grid_remove()  # Nur das Frame verstecken
+        toggle_button.config(text="▶ Show Plot Options")  # Button bleibt sichtbar
     else:
-        plot_options_frame.grid(row=13, column=0, pady=5, sticky="n")
+        plot_options_frame.grid(row=14, column=0, pady=5, sticky="n")  # Wieder anzeigen
         toggle_button.config(text="▼ Hide Plot Options")
+
 
 # Hauptfenster erstellen
 root = tk.Tk()
@@ -206,10 +207,20 @@ canvas = tk.Canvas(main_frame)
 scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=canvas.yview)
 scrollable_frame = ttk.Frame(canvas)
 
-scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+def update_scrollregion(event=None):
+    scrollable_frame.update_idletasks()  # Stellt sicher, dass alle Widgets gerendert wurden
+    canvas.configure(scrollregion=canvas.bbox("all"))  # Setzt die Scrollregion korrekt
+
+scrollable_frame.bind("<Configure>", update_scrollregion)
+
 
 window_id = canvas.create_window((0, 0), window=scrollable_frame, anchor="center")
-canvas.bind("<Configure>", lambda e: canvas.itemconfig(window_id, width=canvas.winfo_width()))
+def update_canvas_size(event):
+    canvas.itemconfig(window_id, width=canvas.winfo_width())
+    update_scrollregion()  # Scrollregion erneut setzen
+
+canvas.bind("<Configure>", update_canvas_size)
+
 canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -237,6 +248,14 @@ password_help.grid(row=2, column=1, padx=5)
 password_help.bind("<Enter>", lambda e: show_tooltip(e, "Please insert your NOMAD password here."))
 password_help.bind("<Leave>", hide_tooltip)
 
+notebook = ttk.Notebook(scrollable_frame)
+frame1 = ttk.Frame(notebook)
+frame2 = ttk.Frame(notebook)
+
+notebook.add(frame1, text="solar cell data evaluation")
+notebook.add(frame2, text="halfstack data evaluation")
+notebook.grid(row=3, column=0, columnspan=2, pady=10, sticky="nsew")
+
 # Buttons mit tatsächlichen Funktionsaufrufen
 buttons_info = [
     ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
@@ -249,31 +268,32 @@ buttons_info = [
     ("Generate Report", generate_report, "Export your report with your wished plots and informations (optional and repeatable).")
 ]
 
-row_index = 3
+row_index = 4
 for text, command, tooltip in buttons_info:
-    if row_index == 5:
+    if row_index == 6:
         row_index += 1
-    btn = ttk.Button(scrollable_frame, text=text, command=command)
+    btn = ttk.Button(frame1, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
     apply_hover_effect(btn, "TButton", "Hover.TButton")
     
-    help_label = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
+    help_label = tk.Label(frame1, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
     help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
     help_label.bind("<Leave>", hide_tooltip)
     
     row_index += 1
 
-file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
-file_path_label.grid(row=5, column=0, pady=5)
+file_path_label = ttk.Label(frame1, text="data path: ", foreground="gray")
+file_path_label.grid(row=6, column=0, pady=5)
 
-toggle_button = tk.Button(scrollable_frame, text="▶ Show Plot Options", command=toggle_plot_options)
-toggle_button.grid(row=12, column=0, pady=10)
+toggle_button = tk.Button(frame1, text="▶ Show Plot Options", command=toggle_plot_options)
+toggle_button.grid(row=13, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
+
 apply_hover_effect(toggle_button, "TButton", "Hover.TButton")
 
 # Frame für Checkboxen (zunächst versteckt)
-plot_options_frame = tk.Frame(scrollable_frame)
-plot_options_frame.grid(row=13, column=0, pady=5, sticky="n")
+plot_options_frame = tk.Frame(frame1)
+plot_options_frame.grid(row=14, column=0, pady=5, sticky="n")
 plot_options_frame.grid_remove()
 
 # Checkbox-Variablen für Plots
