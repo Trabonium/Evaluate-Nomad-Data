@@ -120,8 +120,8 @@ def filter_page_2():
         return
     try:
         filtered_data_page2 = freier_filter(data, master=root)
-        #print(data)
-        #print(filtered_data_page2)
+        print(data)
+        print(filtered_data_page2)
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:
@@ -362,7 +362,7 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
 #ende frame no 1
 
 buttons_info3 = [ #buttons für frame 2
-    ("New filter", filter_page_2, "Filter your data if wished (optional and repeatable).")
+    ("Halfstack filter", filter_page_2, "Filter your data if wished (optional and repeatable).")
 ]
 
 row_index = 1

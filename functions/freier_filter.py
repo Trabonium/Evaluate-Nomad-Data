@@ -18,6 +18,11 @@ def freier_filter(df, master):
             grayed_indices.add(df_index)
         tree.selection_remove(selected_items)
 
+    def restore_grayed_rows():
+        for item in tree.get_children():
+            tree.item(item, tags=())  # Entfernt das 'grayed' Tag
+        grayed_indices.clear()
+
     def remove_grayed_rows():
         nonlocal df
         df = df.drop(grayed_indices).reset_index(drop=True)
@@ -49,6 +54,9 @@ def freier_filter(df, master):
 
     remove_button = tk.Button(button_frame, text="Ausgegraute Zeilen markieren", command=remove_selected)
     remove_button.pack()
+    
+    refresh_button = tk.Button(button_frame, text="Reset", command=restore_grayed_rows)
+    refresh_button.pack()
 
     finish_button = tk.Button(button_frame, text="Fertig", command=remove_grayed_rows)
     finish_button.pack()
