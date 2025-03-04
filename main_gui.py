@@ -9,6 +9,7 @@ from functions.calculate_statistics import calculate_statistics
 from functions.generate_report import generate_pdf_report
 from functions.generate_csv_data import generate_csv_raw_file, generate_csv_filtered_file
 from functions.schieberegler import main_filter
+from functions.freier_filter import freier_filter
 
 # Globale Variablen
 selected_file_path = None
@@ -63,7 +64,7 @@ def load_data():
         return
     try:
         data = get_data_excel_to_df(selected_file_path, nomad_url, token)
-        print(data)
+        #print(data)
         show_auto_close_message("Success", "Data loaded!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Data could not be loaded: {e}")
@@ -111,6 +112,20 @@ def csv_filtered_export():
     if path:
         generate_csv_filtered_file(path, filtered_data, data, None)
         show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
+
+def filter_page_2():
+    global filtered_data_page2, data
+    if data is None:
+        messagebox.showerror("Error", "Please load your data first!")
+        return
+    try:
+        filtered_data_page2 = freier_filter(data, master=root)
+        #print(data)
+        #print(filtered_data_page2)
+        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
+        show_auto_close_message("Success", "Data filtered!", 2000)
+    except Exception as e:
+        messagebox.showerror("Error", f"Filtering gone wrong: {e}")
 
 def generate_report():
     global data, stats, directory, file_name, filtered_data, best
@@ -248,19 +263,42 @@ password_help.grid(row=2, column=1, padx=5)
 password_help.bind("<Enter>", lambda e: show_tooltip(e, "Please insert your NOMAD password here."))
 password_help.bind("<Leave>", hide_tooltip)
 
+# Buttons mit tatsächlichen Funktionsaufrufen
+buttons_info1 = [ #buttons für die kopfzeile
+    ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
+    ("Select File", select_file, "Choose Excel file to download your wanted data. If you need data from multiple batches, merge your experimental Planning excel files - but DO NOT UPLOAD TO NOMAD TWICE!"),
+    ("Load corresponding Data from NOMAD OASIS", load_data, "Download data with the choosen Excel file.")
+]
+
+row_index = 3
+for text, command, tooltip in buttons_info1:
+    if row_index == 5:
+        row_index += 1
+    btn = ttk.Button(scrollable_frame, text=text, command=command)
+    btn.grid(row=row_index, column=0, pady=5)
+    apply_hover_effect(btn, "TButton", "Hover.TButton")
+    
+    help_label = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
+    help_label.grid(row=row_index, column=1, padx=5)
+    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
+    help_label.bind("<Leave>", hide_tooltip)
+    
+    row_index += 1
+
+
+file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
+file_path_label.grid(row=5, column=0, pady=5)
+
 notebook = ttk.Notebook(scrollable_frame)
 frame1 = ttk.Frame(notebook)
 frame2 = ttk.Frame(notebook)
 
 notebook.add(frame1, text="solar cell data evaluation")
 notebook.add(frame2, text="halfstack data evaluation")
-notebook.grid(row=3, column=0, columnspan=2, pady=10, sticky="nsew")
+notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="nsew")
 
-# Buttons mit tatsächlichen Funktionsaufrufen
-buttons_info = [
-    ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
-    ("Select File", select_file, "Choose Excel file to download your wanted data. If you need data from multiple batches, merge your experimental Planning excel files - but DO NOT UPLOAD TO NOMAD TWICE!"),
-    ("Load corresponding Data from NOMAD OASIS", load_data, "Download data with the choosen Excel file."),
+
+buttons_info2 = [ #buttons für das erste notebook
     ("Filter your data", filter_data, "Filter your data if wished (optional and repeatable)."),
     ("Calculate Statistics", calculate_stats, "Calculate the statistics of your data."),
     ("Generate CSV (raw data)", generate_csv_raw_file, "Export your raw data as csv (optional and repeatable)."),
@@ -268,10 +306,8 @@ buttons_info = [
     ("Generate Report", generate_report, "Export your report with your wished plots and informations (optional and repeatable).")
 ]
 
-row_index = 4
-for text, command, tooltip in buttons_info:
-    if row_index == 6:
-        row_index += 1
+row_index = 8
+for text, command, tooltip in buttons_info2:
     btn = ttk.Button(frame1, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
     apply_hover_effect(btn, "TButton", "Hover.TButton")
@@ -283,8 +319,6 @@ for text, command, tooltip in buttons_info:
     
     row_index += 1
 
-file_path_label = ttk.Label(frame1, text="data path: ", foreground="gray")
-file_path_label.grid(row=6, column=0, pady=5)
 
 toggle_button = tk.Button(frame1, text="▶ Show Plot Options", command=toggle_plot_options)
 toggle_button.grid(row=13, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
@@ -324,5 +358,24 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
     apply_hover_effect(check, "TCheckbutton", "Hover.TCheckbutton")
     check.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
     check.bind("<Leave>", hide_tooltip)
+
+#ende frame no 1
+
+buttons_info3 = [ #buttons für frame 2
+    ("New filter", filter_page_2, "Filter your data if wished (optional and repeatable).")
+]
+
+row_index = 1
+for text, command, tooltip in buttons_info3:
+    btn = ttk.Button(frame2, text=text, command=command)
+    btn.grid(row=row_index, column=0, pady=5)
+    apply_hover_effect(btn, "TButton", "Hover.TButton")
+    
+    help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
+    help_label.grid(row=row_index, column=1, padx=5)
+    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
+    help_label.bind("<Leave>", hide_tooltip)
+    
+    row_index += 1
 
 root.mainloop()
