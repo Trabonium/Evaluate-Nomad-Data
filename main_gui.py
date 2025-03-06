@@ -10,6 +10,7 @@ from functions.generate_report import generate_pdf_report
 from functions.generate_csv_data import generate_csv_raw_file, generate_csv_filtered_file
 from functions.schieberegler import main_filter
 from functions.freier_filter import freier_filter
+from functions.UVVis_merge_Eln import UVVis_merge
 
 # Globale Variablen
 selected_file_path = None
@@ -120,7 +121,7 @@ def filter_page_2():
         return
     try:
         filtered_data_page2 = freier_filter(data, master=root)
-        
+
         #ausgabe der gefilterten daten
         common_cols = list(data.columns.intersection(filtered_data_page2.columns))
         df_diff = data.merge(filtered_data_page2, on=common_cols, how='left', indicator=True)
@@ -131,6 +132,10 @@ def filter_page_2():
         show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+
+def merge_UVVis_files():
+    _ = UVVis_merge(master=root)
+    show_auto_close_message("Success", "UVVis merged!", 2000)
 
 def generate_report():
     global data, stats, directory, file_name, filtered_data, best
@@ -297,9 +302,11 @@ file_path_label.grid(row=5, column=0, pady=5)
 notebook = ttk.Notebook(scrollable_frame)
 frame1 = ttk.Frame(notebook)
 frame2 = ttk.Frame(notebook)
+frame3 = ttk.Frame(notebook)
 
 notebook.add(frame1, text="solar cell data evaluation")
 notebook.add(frame2, text="halfstack data evaluation")
+notebook.add(frame3, text="Spielereien")
 notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="nsew")
 
 
@@ -377,6 +384,23 @@ for text, command, tooltip in buttons_info3:
     apply_hover_effect(btn, "TButton", "Hover.TButton")
     
     help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
+    help_label.grid(row=row_index, column=1, padx=5)
+    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
+    help_label.bind("<Leave>", hide_tooltip)
+    
+    row_index += 1
+
+buttons_info4 = [ #buttons für frame 3
+    ("UVVis merge", merge_UVVis_files, "Merge your UVVis R & T files.")
+]
+
+row_index = 1
+for text, command, tooltip in buttons_info4:
+    btn = ttk.Button(frame3, text=text, command=command)
+    btn.grid(row=row_index, column=0, pady=5)
+    apply_hover_effect(btn, "TButton", "Hover.TButton")
+    
+    help_label = tk.Label(frame3, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
     help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
     help_label.bind("<Leave>", hide_tooltip)
