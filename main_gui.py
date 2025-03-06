@@ -120,8 +120,13 @@ def filter_page_2():
         return
     try:
         filtered_data_page2 = freier_filter(data, master=root)
-        print(data)
-        print(filtered_data_page2)
+        
+        #ausgabe der gefilterten daten
+        common_cols = list(data.columns.intersection(filtered_data_page2.columns))
+        df_diff = data.merge(filtered_data_page2, on=common_cols, how='left', indicator=True)
+        df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
+        print(df_A_only)
+
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:
