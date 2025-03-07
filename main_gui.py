@@ -304,10 +304,14 @@ frame1 = ttk.Frame(notebook)
 frame2 = ttk.Frame(notebook)
 frame3 = ttk.Frame(notebook)
 
+for frame in [frame1, frame2, frame3]:
+    frame.columnconfigure(0, weight=1)  # Erlaubt zentrierte Widgets
+
+
 notebook.add(frame1, text="solar cell data evaluation")
 notebook.add(frame2, text="halfstack data evaluation")
 notebook.add(frame3, text="Spielereien")
-notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="nsew")
+notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="ew")
 
 
 buttons_info2 = [ #buttons für das erste notebook
