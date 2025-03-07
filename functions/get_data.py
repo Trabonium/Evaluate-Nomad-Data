@@ -24,7 +24,8 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token):
     # Convert the extracted data to a DataFrame
     excel_df = pd.DataFrame(data, columns=["sample_id", "variation"])
     excel_df = excel_df.dropna(subset=["sample_id"])
-
+    excel_df = excel_df[~excel_df["sample_id"].isin(["#NAME?", "KIT_____"])]
+    
     df, quantities = get_batch_data(excel_df["sample_id"].unique(), nomad_url, token)
     # Merge with the existing DataFrame on 'sample_id'
     # Assume `df` is your existing DataFrame
@@ -37,18 +38,16 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token):
 
 ### Function to get data from the server and process it ###_________________________________________________________________________
 
-def get_batch_data(sample_ids, nomad_url, token):
+#get_batch_data(sample_ids=None, nomad_url=None, token=None, key=["was anderes"])
+
+def get_batch_data(sample_ids, nomad_url, token, quantities=["name"], key=["key_example"]):
     #Get the NOMAD ID
     samples_of_batch = [(sample_id, get_entryid(sample_id, nomad_url, token)) for sample_id in sample_ids]
 
     #Process in which the quantity was changed
     #TODO Make this a variable input as dropdown menu
     key = ["peroTF_CR_SpinBox_SpinCoating"]
-    
-    #Varied quantities to extract 
-    #TODO Make this a variable input as dropdown menu - or from excel file
-    quantities=["name"]
-    
+        
     #Standard JV parameters to get
     jv_quantities=["efficiency",\
                    "fill_factor",\

@@ -208,7 +208,7 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
+def plot_box_and_scatter(df, quantity=['variation'], SeparateScanDir=False):
     # Define the base color palette for unique variations
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df[quantity].unique())))
 
@@ -262,7 +262,7 @@ def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
                 if group.endswith("_bw"):
                     base_group = group[:-3]  # Remove "_bw" suffix
                     group_data = df[
-                        (df[quantity] == base_group) & 
+                        (df[quantity].astype(str) == str(base_group)) & 
                         (df['scan_direction'] == 'backwards')
                     ][jv_quantity[i]].dropna()
                     # Apply shift to the left for backward scans
@@ -270,14 +270,14 @@ def plot_box_and_scatter(df, quantity, SeparateScanDir=False):
                 elif group.endswith("_fw"):
                     base_group = group[:-3]  # Remove "_fw" suffix
                     group_data = df[
-                        (df[quantity] == base_group) & 
+                        (df[quantity].astype(str) == str(base_group)) & 
                         (df['scan_direction'] == 'forwards')
                     ][jv_quantity[i]].dropna()
                     # Apply shift to the right for forward scans
                     group_position = positions[j]/2 + 0.2
             else:
                 # Group data by variation only
-                group_data = df[df[quantity] == group][jv_quantity[i]].dropna()
+                group_data = df[df[quantity].astype(str) == str(group)][jv_quantity[i]].dropna()
                 group_position = positions[j]
 
             # Plot the boxplot

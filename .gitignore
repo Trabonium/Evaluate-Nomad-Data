@@ -6,6 +6,7 @@ build/
 dist/
 main_gui.spec
 Create_ExperimentalPlan_GUI.spec
+JV_Converter.spec
 
 # Ignore Visual Studio Code directory
 .vscode/

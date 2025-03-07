@@ -37,7 +37,7 @@ def return_value(data, path):
     return data
 
 
-def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, nomad_url, token):
+def get_quantity_over_jv(samples_of_batch, key_1, quantities, jv_quantities, nomad_url: str, token) -> pd.DataFrame:
     if not isinstance(key_1, list):
         key_1 = [key_1]
     # collect the results of the sample, in this case it are all the annealing temperatures
@@ -86,6 +86,7 @@ def get_quantity_over_jv(samples_of_batch, key_1, quantities,  jv_quantities, no
                         row.update({quantity: curve.get(quantity)})
 
                     df_jv.loc[len(df_jv.index)] = row
+                    #print(row)
     df_q = df_q.set_index("entry_id")
     df_jv = df_jv.set_index("entry_id")
 
