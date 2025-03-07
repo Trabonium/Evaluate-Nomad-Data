@@ -305,7 +305,7 @@ frame2 = ttk.Frame(notebook)
 frame3 = ttk.Frame(notebook)
 
 for frame in [frame1, frame2, frame3]:
-    frame.columnconfigure(0, weight=1)  # Erlaubt zentrierte Widgets
+    frame.columnconfigure(0, weight=1)  # zentriert  alle objekte die in den frames drin sind
 
 
 notebook.add(frame1, text="solar cell data evaluation")
