@@ -61,7 +61,7 @@ def UVVis_merge(master):
 
     # Toplevel-Fenster erstellen
     merge_window = tk.Toplevel(master)
-    merge_window.title("Datei- und Texteingabe GUI")
+    merge_window.title("Script to merge transmission and reflection data")
 
     # UI-Elemente hinzufügen (wie in der Originalversion)
     label_reflection = tk.Label(merge_window, text="Reflexion:")
