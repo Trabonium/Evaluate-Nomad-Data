@@ -12,6 +12,7 @@ from functions.schieberegler import main_filter
 from functions.freier_filter import freier_filter
 from functions.UVVis_merge_Eln import UVVis_merge
 from functions.Renaming_Measurements_and_Folders import Renaming_folders
+from functions.Create_Excel_GUI_2 import Excel_GUI
 
 # Globale Variablen
 selected_file_path = None
@@ -140,6 +141,10 @@ def merge_UVVis_files():
 
 def Rename_folders_and_measurements():
     Renaming_folders(master=root)
+    show_auto_close_message("Success", "Back to the normal window!", 2000)
+
+def excel_creator_function():
+    Excel_GUI(master=root)
     show_auto_close_message("Success", "Back to the normal window!", 2000)
 
 def generate_report():
@@ -401,7 +406,8 @@ for text, command, tooltip in buttons_info3:
 
 buttons_info4 = [ #buttons für frame 3
     ("UVVis merge", merge_UVVis_files, "Merge your UVVis R & T files."),
-    ("Folder and Measurement Renaming", Rename_folders_and_measurements, "Rename your folders and measurements.")
+    ("Folder and Measurement Renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
+    ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD.")
 ]
 
 row_index = 1
