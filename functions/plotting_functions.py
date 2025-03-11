@@ -20,6 +20,7 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
     PCE = None
     for index, row in result_df.iterrows():
         jv_data = get_specific_data_of_sample(row[f'{curve_type}_id'], "JVmeasurement", nomad_url, token)
+        found_curve = False  # Flag to stop both loops
         for cell in jv_data:
             for i in range(2):
                 PCE = cell["jv_curve"][i]["efficiency"]
@@ -30,8 +31,10 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
                                  label=f"{row['category']}: {round(PCE,2)}%")
                         if max_Voc < max(cell["jv_curve"][i]["voltage"]):
                             max_Voc = max(cell["jv_curve"][i]["voltage"])
-                        #print(cell["name"])
+                        found_curve = True
                         break
+            if found_curve: #Stops plotting duplicates in the same configuration
+                break 
 
     # Plot settings
     ax.legend()
