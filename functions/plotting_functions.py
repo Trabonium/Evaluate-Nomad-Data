@@ -99,7 +99,7 @@ def plot_EQE_curves(df, result_df, nomad_url, token):
                 # If no valid data is found, skip this row
                 continue
         
-        #Relevant arrays
+        #correction -> EQE is max 1.00 instead of 100% + same wavelength for all EQE curves
         wavelength_array = eqe_data[0]['eqe_data'][0]['wavelength_array']
         eqe_array = [w * 100 for w in eqe_data[0]['eqe_data'][0]['eqe_array']]
         if max_EQE < max(eqe_array):
@@ -109,7 +109,7 @@ def plot_EQE_curves(df, result_df, nomad_url, token):
         if wellenlenge_max < max(wavelength_array):
             wellenlenge_max = max(wavelength_array)
         ax.plot(wavelength_array, eqe_array, color=colors[index], label=f"{row['category']}: {round(eqe_data[0]['eqe_data'][0]['integrated_jsc'],2)} mA/cm² {round(eqe_data[0]['eqe_data'][0]['bandgap_eqe'],2)} eV")
-        print(row[f'maximum_efficiency_id'])
+        #print(row[f'maximum_efficiency_id'])
                         
     # Plot settings
     yticks = [i for i in range(0,math.ceil(max_EQE/10)*10+10,10)] #erstellt eine liste von 0 bis max EQE bis auf 10 aufgerundet in 10er schritten
