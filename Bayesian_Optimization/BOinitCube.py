@@ -1,3 +1,11 @@
+#need to import from 1 folder above, so I add .. to sys path
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from kedro.config import OmegaConfigLoader
+from kedro.framework.project import settings
+
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -94,8 +102,13 @@ plot_point(25, 350, 10, 'purple')
 plot_point(25, 200, 13.3, 'purple')
 plot_point(25, 200, 6.7, 'purple')"""
 
-nomad_user = input("Nomad user:")
-nomad_pw = input("Nomad password:")
+#load credentials from credentials.yml in kedro conf
+path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\bayesian-optimization\\conf"
+conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
+credentials = conf_loader["credentials"]
+nomad_user = credentials['nomad_db']['username']
+nomad_pw = credentials['nomad_db']['password']
+
 path_to_excel = "D:/Daten/Studium/Hochschule/SS25/Bachelorarbeit/Code/_KIT_DaBa_BO_ExPlan Testing.xlsx"
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
