@@ -37,7 +37,10 @@ def return_value(data, path):
     return data
 
 
-def get_quantity_over_jv(samples_of_batch, key_1, quantities, jv_quantities, nomad_url: str, token) -> pd.DataFrame:
+def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities, jv_quantities: list[str], nomad_url: str, token) -> pd.DataFrame:
+    """ samples_of_batch: List of Nomad ids
+        jv_quantities: features to extract for each sample
+    """
     if not isinstance(key_1, list):
         key_1 = [key_1]
     # collect the results of the sample, in this case it are all the annealing temperatures

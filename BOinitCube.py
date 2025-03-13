@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import requests
+from functions.get_data import get_data_excel_to_df
 
 # Define cube limits
 time_range = (22, 40)
@@ -69,7 +71,7 @@ def plot_point(time, speed, time_after, color='red'):
     ax.scatter(x, y, z, color=color, s=100, edgecolors='k')
 
 # Example: Add points
-plot_point(25, 200, 10, 'black')
+"""plot_point(25, 200, 10, '#FFFFFF')
 plot_point(23.2, 125, 11.8, 'orange')
 plot_point(23.2, 900, 11.8, 'orange')
 plot_point(32.8, 125, 2.2, 'orange')
@@ -90,7 +92,56 @@ plot_point(22, 515, 7.6, 'yellow')
 plot_point(25, 50, 10, 'purple')
 plot_point(25, 350, 10, 'purple')
 plot_point(25, 200, 13.3, 'purple')
-plot_point(25, 200, 6.7, 'purple')
+plot_point(25, 200, 6.7, 'purple')"""
+
+nomad_user = input("Nomad user:")
+nomad_pw = input("Nomad password:")
+path_to_excel = "D:/Daten/Studium/Hochschule/SS25/Bachelorarbeit/Code/_KIT_DaBa_BO_ExPlan Testing.xlsx"
+nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
+
+global token
+try:
+    response = requests.get(f"{nomad_url}/auth/token", params={"username": nomad_user, "password": nomad_pw})
+    response.raise_for_status()
+    token = response.json().get('access_token', None)
+    print("Login successful.", f"Logged in as {nomad_user}")
+except requests.exceptions.RequestException as e:
+    print("Login Failed", f"Error: {e}")
+    exit
+
+data = get_data_excel_to_df(path_to_excel, nomad_url, token)
+
+#add time_after column
+rotation_time_before = 10
+data['time_after'] = rotation_time_before + data['rotation_time'] - data['dropping_time']
+
+max_efficiency = data['efficiency'].max()
+min_efficiency = data['efficiency'].min()
+
+def get_gradient_color(efficiency: float, max: float, min: float) -> str:
+    color_max = [0xFF, 0xAA, 0] #RGB yellow
+    color_min = [0, 0, 0xAA] #RGB blue
+    color = "#"
+    for i in range(3):
+        x = efficiency * (color_max[i] - color_min[i]) / (max - min)
+        x += color_min[i]
+        color += f"{int(x):02X}"
+
+    return color
+
+
+current_max = data.loc[0]
+for index, row in data.iterrows():
+    if row['variation'] == current_max['variation']:
+        if row['efficiency'] > current_max['efficiency']:
+            current_max = row
+    else:
+        color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency)
+        plot_point(current_max['dropping_time'], current_max['dropping_speed'], current_max['time_after'], color=color)
+        current_max = row
+    
+
+
 
 # --- Plot the constraint line in the X-Z plane ---
 time_values = np.linspace(time_range[0], time_range[1], 100)

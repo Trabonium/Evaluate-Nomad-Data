@@ -17,12 +17,16 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token):
 
     # Extract data from columns 6 (sample_id) and 7 (group names)
     data = []
-    for row in sheet.iter_rows(min_row=3, min_col=6, max_col=7, values_only=True):
-        sample_id, group_name = row
-        data.append((sample_id, group_name))
+    for row in sheet.iter_rows(min_row=3, values_only=True):
+        sample_id = row[5]
+        group_name = row[6]
+        rotation_time = row[67]
+        dropping_time = row[71]
+        dropping_speed = row[72]
+        data.append((sample_id, group_name, rotation_time, dropping_time, dropping_speed))
 
     # Convert the extracted data to a DataFrame
-    excel_df = pd.DataFrame(data, columns=["sample_id", "variation"])
+    excel_df = pd.DataFrame(data, columns=["sample_id", "variation", "rotation_time", "dropping_time", "dropping_speed"])
     excel_df = excel_df.dropna(subset=["sample_id"])
     excel_df = excel_df[~excel_df["sample_id"].isin(["#NAME?", "KIT_____"])]
     
