@@ -103,13 +103,16 @@ plot_point(25, 200, 13.3, 'purple')
 plot_point(25, 200, 6.7, 'purple')"""
 
 #load credentials from credentials.yml in kedro conf
-path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\bayesian-optimization\\conf"
+current_file_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+path_to_credentials =  current_file_path + "\\bayesian-optimization\\conf"
 conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
 credentials = conf_loader["credentials"]
 nomad_user = credentials['nomad_db']['username']
 nomad_pw = credentials['nomad_db']['password']
 
-path_to_excel = "C:/Users/hr0264/Documents/901_ELN/Evaluate-Nomad-Data/Bayesian_Optimization/bayesian-optimization/data/01_raw/_KIT_DaBa_BO_ExPlan.xlsx"
+rawdatalist = os.listdir(current_file_path + "\\bayesian-optimization\\data\\01_raw")
+#get the first Excel file in raw data
+path_to_excel = current_file_path + "\\bayesian-optimization\\data\\01_raw\\" + list(filter(lambda x: ".xlsx" in x, rawdatalist))[0]
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
 global token
@@ -130,14 +133,34 @@ data['time_after'] = rotation_time_before + data['rotation_time'] - data['droppi
 
 max_efficiency = data['efficiency'].max()
 min_efficiency = data['efficiency'].min()
+median_efficiency = data['efficiency'].median()
 
-def get_gradient_color(efficiency: float, max: float, min: float) -> str:
+def get_gradient_color(efficiency: float, max: float, min: float, median:float) -> str:
     color_max = [0xFF, 0xAA, 0] #RGB yellow
     color_min = [0, 0, 0xAA] #RGB blue
+    #color_min = [0xAA, 0, 0] #RGB red
+    #color_max = [0x13, 0xC1, 0] #RGB green
+    if not (min <= efficiency <= max):
+        raise ValueError("given value to get gradient must be between min and max")
+    if not (min <= median <= max):
+        raise ValueError("given median must be between min and max")
+
+    halfway_color = []
+    for f in range(3):
+        halfway_color.append((color_max[f] + color_min[f])/2)
+
     color = "#"
     for i in range(3):
-        x = efficiency * (color_max[i] - color_min[i]) / (max - min)
-        x += color_min[i]
+        x: int
+        #the median point is set as the halfway point of the gradient
+        #from there, each side has a linear gradient towards min/max
+        if (efficiency > median):
+            x = halfway_color[i] + ((color_max[i] - halfway_color[i])*(efficiency - median)/(max - median))
+        elif (efficiency < median):
+            x = color_min[i] + ((halfway_color[i] - color_min[i])*(efficiency - min)/(median - min))
+        else: #efficiency = median
+            x = halfway_color[i]
+        
         color += f"{int(x):02X}"
 
     return color
@@ -149,10 +172,13 @@ for index, row in data.iterrows():
         if row['efficiency'] > current_max['efficiency']:
             current_max = row
     else:
-        color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency)
+        color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency, median_efficiency)
         plot_point(current_max['dropping_time'], current_max['dropping_speed'], current_max['time_after'], color=color)
         current_max = row
-    
+#plot last
+color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency, median_efficiency)
+plot_point(current_max['dropping_time'], current_max['dropping_speed'], current_max['time_after'], color=color)
+
 
 
 
