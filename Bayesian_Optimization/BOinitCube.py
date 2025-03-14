@@ -54,7 +54,7 @@ fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 
 # Plot cube
-ax.add_collection3d(Poly3DCollection(faces, facecolors='cyan', linewidths=1, edgecolors='k', alpha=0.2))
+ax.add_collection3d(Poly3DCollection(faces, facecolors='grey', linewidths=1, edgecolors='k', alpha=0.1))
 
 # Labels
 ax.set_xlabel("Time (22-40)")
@@ -109,7 +109,7 @@ credentials = conf_loader["credentials"]
 nomad_user = credentials['nomad_db']['username']
 nomad_pw = credentials['nomad_db']['password']
 
-path_to_excel = "D:/Daten/Studium/Hochschule/SS25/Bachelorarbeit/Code/_KIT_DaBa_BO_ExPlan Testing.xlsx"
+path_to_excel = "C:/Users/hr0264/Documents/901_ELN/Evaluate-Nomad-Data/Bayesian_Optimization/bayesian-optimization/data/01_raw/_KIT_DaBa_BO_ExPlan.xlsx"
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
 global token
