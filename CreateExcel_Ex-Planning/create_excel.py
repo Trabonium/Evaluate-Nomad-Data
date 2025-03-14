@@ -109,7 +109,7 @@ class ExperimentExcelBuilder:
                     
                 if config.get("gasquenching", False):
                     steps.extend(["Gas", "Gas quenching start time [s]", "Gas quenching duration [s]", "Gas quenching flow rate [ml/s]", "Gas quenching pressure [bar]",
-                                  "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Nozzle shape", "Nozzle size [mm²]"])  
+                                  "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Tempereture [°C]", "Nozzle shape", "Nozzle size [mm²]"])  
                     
                 if config.get("vacuumquenching", False):
                     steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
@@ -126,9 +126,20 @@ class ExperimentExcelBuilder:
             elif process_name == "Inkjet Printing": 
                 steps.extend(["Printhead name", "Printing run", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
                               "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pL]", "Dropping Height [mm]",
-                              "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
-                              "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
-                              ]) 
+                              "Printing speed [mm/s]"])
+                if config.get("printer") == "Pixdro":
+                    steps.extend(["Wf Number of Pulses", "Wf Width 1[us]", "Wf Space 1[us]", "Wf Level 1[V]", "Wf Rise 1[V/us]", "Wf Fall 1[V/us]",
+                                  "Wf Width 2[us]", "Wf Space 2[us]", "Wf Level 2[V]", "Wf Rise 2[V/us]", "Wf Fall 2[V/us]",
+                                  "Wf Width 3[us]", "Wf Space 3[us]", "Wf Level 3[V]", "Wf Rise 3[V/us]", "Wf Fall 3[V/us]"
+                                  ])
+
+                if config.get("printer") == "Notion":
+                        steps.extend(["Wf Number of Pulses", "Wf Delay Time [us]", "Wf Rise Time [us]", "Wf Hold Time [us]", "Wf Fall Time [us]", "Wf Relax Time [us]", "Wf Relax Time [us]", 
+                              "Wf Voltage [V]", "Wf Multipulse [1/0]", "Wf Number Greylevels", "Wf Grey Level 0 Use Pulse [1/0]", "Wf Grey Level 1 Use Pulse [1/0]",
+                              ])
+
+                steps.extend(["Ink reservoir pressure [mbar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]"
+                                ])
             
             # Add annealing steps
             steps.extend(["Annealing time [min]", "Annealing temperature [°C]",
@@ -137,10 +148,10 @@ class ExperimentExcelBuilder:
 
         # PVD Processes multiple materials
         if process_name == "Seq-Evaporation" or process_name == "Co-Evaporation":
-            steps = ["Material name", "Layer type", "Tool/GB name"]
+            steps = ["Material name", "Layer type", "Tool/GB name", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]", "Substrate temperature [°C]"]
             for i in range(1, config.get('materials', 0) + 1):
-                steps.extend([f"Material name {i}", f"Base pressure {i} [bar]", f"Pressure start {i} [bar]", f"Pressure end {i} [bar]",
-                              f"Source temperature start {i}[°C]", f"Source temperature end {i}[°C]", f"Substrate temperature {i} [°C]", 
+                steps.extend([f"Material name {i}", 
+                              f"Source temperature start {i}[°C]", f"Source temperature end {i}[°C]",
                               f"Thickness {i} [nm]", f"Rate {i} [angstrom/s]", f"Tooling factor {i}"])
             return steps
 
@@ -184,7 +195,7 @@ process_config = {
     "Dip Coating": {"solvents": 1, "solutes": 1}, 
     "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1, "antisolvent": False, "gasquenching": 0, "vacuumquenching": 0}, 
     "Slot Die Coating": {"solvents": 1, "solutes": 1},  
-    "Inkjet Printing": {"solvents": 1, "solutes": 1},  
+    "Inkjet Printing": {"solvents": 1, "solutes": 1, "printer": "Pixdro"},  
 
     "Evaporation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]",
                               "Source temperature start[°C]", "Source temperature end[°C]", "Substrate temperature [°C]", "Thickness [nm]",
@@ -202,10 +213,10 @@ process_config = {
                              "Thickness [nm]", "Gas flow rate [cm^3/min]", "Notes"]},
     "Laser Scribing": {"steps": ["Laser wavelength [nm]", "Laser pulse time [ps]", "Laser pulse frequency [kHz]",
                        "Speed [mm/s]", "Fluence [J/cm2]", "Power [%]", "Recipe file"]},
-    "ALD": {"steps": ["Material name", "Layer type", "Tool/GB name", "Source", "Thickness [nm]", "Temperature [°C]", "Rate [A/s]",
-                      "Time [s]", "Number of cycles", "Precursor 1", "Pulse duration 1 [s]",
-                      "Manifold temperature 1 [°C]", "Bottle temperature 1 [°C]", "Precursor 2 (Oxidizer/Reducer)", "Pulse duration 2 [s]",
-                      "Manifold temperature 2 [°C]"]},
+    "ALD": {"steps": ["Material name", "Layer type", "Tool/GB name", "Thickness [nm]", "Reactor Temperature [°C]", "Manifold Temperature [°C]",
+                      "Number of cycles", "Precursor 1", "Pulse duration 1 [s]", "Pulse flow rate 1 [ccm]", "Purge duration 1 [s]", "Purge flow rate 1 [ccm]", "Bottle temperature 1 [°C]", 
+                      "Precursor 2 (Oxidizer/Reducer)", "Pulse duration 2 [s]", "Pulse flow rate 2 [ccm]", "Purge duration 2 [s]", "Purge flow rate 2 [ccm]", "Bottle temperature 2 [°C]",
+                      ]},
     "Annealing": {"steps": ["Annealing time [min]", "Annealing temperature [°C]", "Annealing athmosphere", "Relative humidity [%]", "Notes"]}, # Added DB 2024-11-29 Annealing
 
     "Generic Process": {"steps": ["Name", "Notes"]}
