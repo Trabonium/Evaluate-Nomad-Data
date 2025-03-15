@@ -125,7 +125,9 @@ except requests.exceptions.RequestException as e:
     print("Login Failed", f"Error: {e}")
     exit
 
-data = get_data_excel_to_df(path_to_excel, nomad_url, token)
+excel_columns = [['sample_id',5],['variation',6],['rotation_time',67],['dropping_time',71],['dropping_speed',72]]
+
+data = get_data_excel_to_df(path_to_excel, nomad_url, token, key='peroTF_SpinCoating', columns_from_excel=excel_columns)
 
 #add time_after column
 rotation_time_before = 10

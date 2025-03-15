@@ -37,7 +37,7 @@ def return_value(data, path):
     return data
 
 
-def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities, jv_quantities: list[str], nomad_url: str, token) -> pd.DataFrame:
+def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities: list[str], jv_quantities: list[str], nomad_url: str, token) -> pd.DataFrame:
     """ samples_of_batch: List of Nomad ids
         jv_quantities: features to extract for each sample
     """
@@ -68,7 +68,7 @@ def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities, jv_quan
 
         # Change code here!!!!
         for link in linked_data:
-            if any([kk in link["archive"]["metadata"]["entry_type"] for kk in key_1]):
+            if any([kk == link["archive"]["metadata"]["entry_type"] for kk in key_1]):
                 data = link["archive"]["data"]
                 for q in quantities:
                     q_split = q.split("/")

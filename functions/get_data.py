@@ -8,29 +8,31 @@ from functions.api_calls_get_data import get_entryid, get_quantity_over_jv
 
 ### Function to get data from excel and server  ###_____________________________________________________________________________________
 
-def get_data_excel_to_df(excel_file_path, nomad_url, token):
+def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_SpinBox_SpinCoating"], 
+    columns_from_excel=[['sample_id', 5], ['group_name', 6]]):
+    """columns_from excel: list of pairs of column name and column number (starting at 0) that will be read from the excel file.
+    """
     
     #file_path = path + "ExperimentsInfo.xlsx"  
     
     workbook = load_workbook(filename=excel_file_path, data_only=True)
     sheet = workbook.active  # Access the active worksheet
 
-    # Extract data from columns 6 (sample_id) and 7 (group names)
+    # Extract data from  specified columns, by default 6 (sample_id) and 7 (group names)
     data = []
     for row in sheet.iter_rows(min_row=3, values_only=True):
-        sample_id = row[5]
-        group_name = row[6]
-        rotation_time = row[67]
-        dropping_time = row[71]
-        dropping_speed = row[72]
-        data.append((sample_id, group_name, rotation_time, dropping_time, dropping_speed))
+        current_row = []
+        for pair in columns_from_excel:
+            current_row.append(row[pair[1]])
+        data.append(current_row)
 
     # Convert the extracted data to a DataFrame
-    excel_df = pd.DataFrame(data, columns=["sample_id", "variation", "rotation_time", "dropping_time", "dropping_speed"])
+    column_titles = [pair[0] for pair in columns_from_excel]
+    excel_df = pd.DataFrame(data, columns=column_titles)
     excel_df = excel_df.dropna(subset=["sample_id"])
     excel_df = excel_df[~excel_df["sample_id"].isin(["#NAME?", "KIT_____"])]
     
-    df, quantities = get_batch_data(excel_df["sample_id"].unique(), nomad_url, token)
+    df, quantities = get_batch_data(excel_df["sample_id"].unique(), nomad_url, token, key=key)
     # Merge with the existing DataFrame on 'sample_id'
     # Assume `df` is your existing DataFrame
     df = excel_df.merge(df, on="sample_id", how="left")
@@ -44,14 +46,10 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token):
 
 #get_batch_data(sample_ids=None, nomad_url=None, token=None, key=["was anderes"])
 
-def get_batch_data(sample_ids, nomad_url, token, quantities=["name"], key=["key_example"]):
+def get_batch_data(sample_ids, nomad_url, token, quantities=["name"], key=["peroTF_CR_SpinBox_SpinCoating"]):
     #Get the NOMAD ID
     samples_of_batch = [(sample_id, get_entryid(sample_id, nomad_url, token)) for sample_id in sample_ids]
 
-    #Process in which the quantity was changed
-    #TODO Make this a variable input as dropdown menu
-    key = ["peroTF_CR_SpinBox_SpinCoating"]
-        
     #Standard JV parameters to get
     jv_quantities=["efficiency",\
                    "fill_factor",\
