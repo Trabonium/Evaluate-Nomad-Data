@@ -1,6 +1,16 @@
+#need to import from 1 folder above, so I add .. to sys path
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from kedro.config import OmegaConfigLoader
+from kedro.framework.project import settings
+
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import requests
+from functions.get_data import get_data_excel_to_df
 
 # Define cube limits
 time_range = (22, 40)
@@ -44,7 +54,7 @@ fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 
 # Plot cube
-ax.add_collection3d(Poly3DCollection(faces, facecolors='cyan', linewidths=1, edgecolors='k', alpha=0.2))
+ax.add_collection3d(Poly3DCollection(faces, facecolors='grey', linewidths=1, edgecolors='k', alpha=0.1))
 
 # Labels
 ax.set_xlabel("Time (22-40)")
@@ -69,7 +79,7 @@ def plot_point(time, speed, time_after, color='red'):
     ax.scatter(x, y, z, color=color, s=100, edgecolors='k')
 
 # Example: Add points
-plot_point(25, 200, 10, 'black')
+"""plot_point(25, 200, 10, '#FFFFFF')
 plot_point(23.2, 125, 11.8, 'orange')
 plot_point(23.2, 900, 11.8, 'orange')
 plot_point(32.8, 125, 2.2, 'orange')
@@ -90,7 +100,89 @@ plot_point(22, 515, 7.6, 'yellow')
 plot_point(25, 50, 10, 'purple')
 plot_point(25, 350, 10, 'purple')
 plot_point(25, 200, 13.3, 'purple')
-plot_point(25, 200, 6.7, 'purple')
+plot_point(25, 200, 6.7, 'purple')"""
+
+#load credentials from credentials.yml in kedro conf
+current_file_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+path_to_credentials =  current_file_path + "\\bayesian-optimization\\conf"
+conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
+credentials = conf_loader["credentials"]
+nomad_user = credentials['nomad_db']['username']
+nomad_pw = credentials['nomad_db']['password']
+
+rawdatalist = os.listdir(current_file_path + "\\bayesian-optimization\\data\\01_raw")
+#get the first Excel file in raw data
+path_to_excel = current_file_path + "\\bayesian-optimization\\data\\01_raw\\" + list(filter(lambda x: ".xlsx" in x, rawdatalist))[0]
+nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
+
+global token
+try:
+    response = requests.get(f"{nomad_url}/auth/token", params={"username": nomad_user, "password": nomad_pw})
+    response.raise_for_status()
+    token = response.json().get('access_token', None)
+    print("Login successful.", f"Logged in as {nomad_user}")
+except requests.exceptions.RequestException as e:
+    print("Login Failed", f"Error: {e}")
+    exit
+
+excel_columns = [['sample_id',5],['variation',6],['rotation_time',67],['dropping_time',71],['dropping_speed',72]]
+
+data = get_data_excel_to_df(path_to_excel, nomad_url, token, key='peroTF_SpinCoating', columns_from_excel=excel_columns)
+
+#add time_after column
+rotation_time_before = 10
+data['time_after'] = rotation_time_before + data['rotation_time'] - data['dropping_time']
+
+max_efficiency = data['efficiency'].max()
+min_efficiency = data['efficiency'].min()
+median_efficiency = data['efficiency'].median()
+
+def get_gradient_color(efficiency: float, max: float, min: float, median:float) -> str:
+    color_max = [0xFF, 0xAA, 0] #RGB yellow
+    color_min = [0, 0, 0xAA] #RGB blue
+    #color_min = [0xAA, 0, 0] #RGB red
+    #color_max = [0x13, 0xC1, 0] #RGB green
+    if not (min <= efficiency <= max):
+        raise ValueError("given value to get gradient must be between min and max")
+    if not (min <= median <= max):
+        raise ValueError("given median must be between min and max")
+
+    halfway_color = []
+    for f in range(3):
+        halfway_color.append((color_max[f] + color_min[f])/2)
+
+    color = "#"
+    for i in range(3):
+        x: int
+        #the median point is set as the halfway point of the gradient
+        #from there, each side has a linear gradient towards min/max
+        if (efficiency > median):
+            x = halfway_color[i] + ((color_max[i] - halfway_color[i])*(efficiency - median)/(max - median))
+        elif (efficiency < median):
+            x = color_min[i] + ((halfway_color[i] - color_min[i])*(efficiency - min)/(median - min))
+        else: #efficiency = median
+            x = halfway_color[i]
+        
+        color += f"{int(x):02X}"
+
+    return color
+
+
+current_max = data.loc[0]
+for index, row in data.iterrows():
+    if row['variation'] == current_max['variation']:
+        if row['efficiency'] > current_max['efficiency']:
+            current_max = row
+    else:
+        color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency, median_efficiency)
+        plot_point(current_max['dropping_time'], current_max['dropping_speed'], current_max['time_after'], color=color)
+        current_max = row
+#plot last
+color = get_gradient_color(current_max['efficiency'], max_efficiency, min_efficiency, median_efficiency)
+plot_point(current_max['dropping_time'], current_max['dropping_speed'], current_max['time_after'], color=color)
+
+
+
 
 # --- Plot the constraint line in the X-Z plane ---
 time_values = np.linspace(time_range[0], time_range[1], 100)
