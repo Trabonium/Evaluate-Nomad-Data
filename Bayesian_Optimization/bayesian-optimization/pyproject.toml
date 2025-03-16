@@ -48,3 +48,6 @@ attr = "bayesian_optimization.__version__"
 [tool.setuptools.packages.find]
 where = [ "src",]
 namespaces = false
+
+[tool.kedro_telemetry]
+project_id = "4cfed9f19c904b4c985de802cf3db5e0"

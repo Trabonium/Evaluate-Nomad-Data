@@ -44,8 +44,6 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_Spin
 
 ### Function to get data from the server and process it ###_________________________________________________________________________
 
-#get_batch_data(sample_ids=None, nomad_url=None, token=None, key=["was anderes"])
-
 def get_batch_data(sample_ids, nomad_url, token, quantities=["name"], key=["peroTF_CR_SpinBox_SpinCoating"]):
     #Get the NOMAD ID
     samples_of_batch = [(sample_id, get_entryid(sample_id, nomad_url, token)) for sample_id in sample_ids]

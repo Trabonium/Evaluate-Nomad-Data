@@ -1,0 +1,26 @@
+experiment_ids:
+  filepath: data/01_raw/_KIT_DaBa_BO_ExPlan Testing.xlsx
+  type: pandas.ExcelDataset
+  load_args:
+    header: 1
+    #usecols: 'A:E,H:AZ' example if only certain columns should be loaded
+
+complete_data:
+  filepath: data/03_primary/complete_data.pkl
+  type: pickle.PickleDataset
+  backend: pickle
+
+preprocessed_data:
+  filepath: data/05_model_input/preprocessed_data.pkl
+  type: pickle.PickleDataset
+  backend: pickle
+
+prediction:
+  filepath: data/07_model_output/prediction.csv
+  type: pandas.CSVDataset
+  load_args:
+    sep: ";"
+    decimal: ","
+  save_args:
+    sep: ";"
+    decimal: ","
