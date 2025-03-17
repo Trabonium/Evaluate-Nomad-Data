@@ -10,7 +10,9 @@ Create_ExperimentalPlan_GUI.spec
 JV_Converter.spec
 
 # Ignore Visual Studio Code directory
-.vscode/
+.vscode/*
+# keep launch file for easier sharing of pipeline execution etc.
+!.vscode/launch.json
 
 
 #Ignore py cache
