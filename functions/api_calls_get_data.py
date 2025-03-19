@@ -9,23 +9,34 @@ import pandas as pd
 import numpy as np
 
 
-def get_entryid(sample_id, nomad_url, token):  # give it a batch id
+def get_entryid(sample_ids: list[str], nomad_url: str, token):  # give it a batch id
     # get all entries related to this batch id
     query = {
         'required': {
-            'metadata': '*'
+            #'metadata': '*'
+            'include': ['entry_id', 'entry_name']
         },
         'owner': 'visible',
-        'query': {'results.eln.lab_ids': sample_id},
+        'query': {'results.eln.lab_ids': {'any': sample_ids}},
         'pagination': {
             'page_size': 100
         }
     }
     response = requests.post(
-        f'{nomad_url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query)
-    data = response.json()["data"]
-    assert len(data) == 1
-    return data[0]["entry_id"]
+        f'{nomad_url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query).json()
+    data = response["data"]
+    queried_ids = pd.DataFrame(data=data)
+
+    #get remaining pages
+    while (response['pagination'].get('next_page_after_value')):
+        next_page = response['pagination'].get('next_page_after_value')
+        query['pagination']['page_after_value'] = next_page
+        response = requests.post(
+        f'{nomad_url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query).json()
+        data = response['data']
+        queried_ids = pd.concat([queried_ids, pd.DataFrame(data)], ignore_index=True)
+    
+    return queried_ids
 
 
 def return_value(data, path):
@@ -37,8 +48,8 @@ def return_value(data, path):
     return data
 
 
-def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities: list[str], jv_quantities: list[str], nomad_url: str, token) -> pd.DataFrame:
-    """ samples_of_batch: List of Nomad ids
+def get_quantity_over_jv(samples_of_batch: pd.DataFrame, key_1, quantities: list[str], jv_quantities: list[str], nomad_url: str, token) -> pd.DataFrame:
+    """ samples_of_batch: Dataframe with at least a column 'entry_id' with nomad entry ids
         jv_quantities: features to extract for each sample
     """
     if not isinstance(key_1, list):
@@ -47,9 +58,9 @@ def get_quantity_over_jv(samples_of_batch: list[str], key_1, quantities: list[st
     df_q = pd.DataFrame(columns=["entry_id","sample_id"]+quantities)
     df_jv = pd.DataFrame(columns=["entry_id"]+["px#"]+["scan_direction"]+jv_quantities)
 
-    for sample_ids in samples_of_batch:
-        sample_id = sample_ids[1]
-        row = {"entry_id": sample_id, "sample_id":sample_ids[0]}
+    for index, row in samples_of_batch.iterrows():
+        sample_id = row['entry_id']
+        row = {"entry_id": sample_id, "sample_id":row['entry_name']}
         query = {
             'required': {
                 'metadata': '*',

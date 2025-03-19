@@ -32,7 +32,7 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_Spin
     excel_df = excel_df.dropna(subset=["sample_id"])
     excel_df = excel_df[~excel_df["sample_id"].isin(["#NAME?", "KIT_____"])]
     
-    df, quantities = get_batch_data(excel_df["sample_id"].unique(), nomad_url, token, key=key)
+    df, quantities = get_batch_data(excel_df["sample_id"].unique().tolist(), nomad_url, token, key=key)
     # Merge with the existing DataFrame on 'sample_id'
     # Assume `df` is your existing DataFrame
     df = excel_df.merge(df, on="sample_id", how="left")
@@ -46,7 +46,8 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_Spin
 
 def get_batch_data(sample_ids, nomad_url, token, quantities=["name"], key=["peroTF_CR_SpinBox_SpinCoating"]):
     #Get the NOMAD ID
-    samples_of_batch = [(sample_id, get_entryid(sample_id, nomad_url, token)) for sample_id in sample_ids]
+    samples_of_batch = get_entryid(sample_ids, nomad_url, token)
+    #samples_of_batch = [(sample_id, get_entryid(sample_id, nomad_url, token)) for sample_id in sample_ids]
 
     #Standard JV parameters to get
     jv_quantities=["efficiency",\
