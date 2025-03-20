@@ -9,7 +9,7 @@ from functions.api_calls_get_data import get_entryid, get_quantity_over_jv
 ### Function to get data from excel and server  ###_____________________________________________________________________________________
 
 def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_SpinBox_SpinCoating"], 
-    columns_from_excel=[['sample_id', 5], ['group_name', 6]]):
+    columns_from_excel=[['sample_id', 5], ['variation', 6]]):
     """columns_from excel: list of pairs of column name and column number (starting at 0) that will be read from the excel file.
     """
     
