@@ -13,6 +13,20 @@ def sanitize_filename(filename):
 
 # Generate PDF Report
 def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nomad_url, token):
+    """
+    Generates a PDF report with selected plots and data tables.
+
+    Parameters:
+        result_df (DataFrame): The statistics DataFrame.
+        df (DataFrame): The original data DataFrame.
+        report_title (str): The filename of the PDF report.
+        include_plots (dict): Dictionary of boolean values to include specific plots. Keys:
+                              - 'JV'
+                              - 'Box+Scatter'
+                              - 'EQE'
+                              - 'MPP'
+                              - 'Table'
+    """
     # Split the path and file name
     directory, file_name = os.path.split(report_title)
 
@@ -29,25 +43,15 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
     # Ensure the directory exists
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
-
   
-    """
-    Generates a PDF report with selected plots and data tables.
 
-    Parameters:
-        result_df (DataFrame): The statistics DataFrame.
-        df (DataFrame): The original data DataFrame.
-        report_title (str): The filename of the PDF report.
-        include_plots (dict): Dictionary of boolean values to include specific plots. Keys:
-                              - 'JV'
-                              - 'Box+Scatter'
-                              - 'EQE'
-                              - 'MPP'
-                              - 'Table'
-    """
-    # Round numerical values in result_df #change due to futurewarning
-    #rounded_result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+    # Round numerical values in result_df
     rounded_result_df = result_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+    rounded_best_df = best_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+
+    # Drop rows with NaN values
+    df = df.dropna(subset=['efficiency'])  # Drop rows with NaN values in 'efficiency'
+    result_df = result_df.dropna(subset=['maximum_efficiency']) # Drop rows with NaN values in 'maximum_efficiency'
 
 
     with PdfPages(report_title) as pdf:
@@ -97,69 +101,52 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
             pdf.savefig(fig_mpp, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_mpp)
 
-
-        # Round all numerical values to 2 decimal places     old version due to futurewarning
-        #result_df = result_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-        #best_df = best_df.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-
-        result_df = result_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-        best_df = best_df.map(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
-
-
-        # Insert line breaks in 'ID' fields (or any other long columns)
-        for col in result_df.columns:
-            if 'ID' in col:  # Assuming 'ID' columns might be too wide
-                result_df[col] = result_df[col].apply(lambda x: insert_line_breaks(str(x)) if isinstance(x, str) else x)
-
-        # Create a figure for the table
-        fig_table, ax_table = plt.subplots(figsize=(12, 6))
-        ax_table.axis('off')  # Hide axis
-
-        # Add the table to the figure
-        table = ax_table.table(cellText=result_df.values, colLabels=result_df.columns, loc='center', cellLoc='center')
-
-         # Set column widths
-        max_width = 15  # Set a max column width for readability
-        col_widths = []
-        
-        # Calculate the max length of content in each column
-        for i, column in enumerate(result_df.columns):
-            max_len = max(result_df[column].apply(lambda x: len(str(x)) if isinstance(x, str) else 0))  # Find max length of text in column
-            col_widths.append(min(max_len, max_width))  # Set the width to max length or max width
-
-        # Manually set column widths based on calculated values
-        for i, width in enumerate(col_widths):
-            table.auto_set_column_width([i])  # This will set the width for each column individually
-
-
-        # Save table to PDF
-        pdf.savefig(fig_table, dpi=300, transparent=True, bbox_inches='tight')
-        plt.close(fig_table)
-
-        # Create a figure for the table
-        fig_table2, ax_table2 = plt.subplots(figsize=(12, 6))
-        ax_table2.axis('off')  # Hide axis
-
-        # Add the table to the figure
-        table2 = ax_table2.table(cellText=best_df.values, colLabels=best_df.columns, loc='center', cellLoc='center')
-         
-        # Set column widths
-        max_width = 15  # Set a max column width for readability
-        col_widths = []
-
-        # Calculate the max length of content in each column
-        for i, column in enumerate(best_df.columns):
-            max_len = max(best_df[column].apply(lambda x: len(str(x)) if isinstance(x, str) else 0))  # Find max length of text in column
-            col_widths.append(min(max_len, max_width))  # Set the width to max length or max width
-
-        # Manually set column widths based on calculated values
-        for i, width in enumerate(col_widths):
-            table2.auto_set_column_width([i])  # This will set the width for each column individually
-
-
-        # Save table to PDF
-        pdf.savefig(fig_table2, dpi=300, transparent=True, bbox_inches='tight')
-        plt.close(fig_table2)
+        # Include Results Table
+        if include_plots.get('Table', False):
+            #Preparing results table
+            #Insert line breaks in 'ID' fields (or any other long columns)
+            for col in rounded_result_df.columns:
+                if 'ID' in col:  # Assuming 'ID' columns might be too wide
+                    rounded_result_df[col] = rounded_result_df[col].apply(lambda x: insert_line_breaks(str(x)) if isinstance(x, str) else x)
+            # Create a figure for the table
+            fig_table, ax_table = plt.subplots(figsize=(12, 6))
+            ax_table.axis('off')  # Hide axis
+            # Add the table to the figure
+            table = ax_table.table(cellText=rounded_result_df.values, colLabels=result_df.columns, loc='center', cellLoc='center')
+            # Set column widths
+            max_width = 15  # Set a max column width for readability
+            col_widths = []
+            
+            # Calculate the max length of content in each column
+            for i, column in enumerate(rounded_result_df.columns):
+                max_len = max(rounded_result_df[column].apply(lambda x: len(str(x)) if isinstance(x, str) else 0))  # Find max length of text in column
+                col_widths.append(min(max_len, max_width))  # Set the width to max length or max width
+            # Manually set column widths based on calculated values
+            for i, width in enumerate(col_widths):
+                table.auto_set_column_width([i])  # This will set the width for each column individually
+            # Save table to PDF
+            pdf.savefig(fig_table, dpi=300, transparent=True, bbox_inches='tight')
+            plt.close(fig_table)
+                    #Preparing best results table
+            # Create a figure for the table
+            fig_table2, ax_table2 = plt.subplots(figsize=(12, 6))
+            ax_table2.axis('off')  # Hide axis
+            # Add the table to the figure
+            table2 = ax_table2.table(cellText=rounded_best_df.values, colLabels=best_df.columns, loc='center', cellLoc='center')
+             
+            # Set column widths
+            max_width = 15  # Set a max column width for readability
+            col_widths = []
+            # Calculate the max length of content in each column
+            for i, column in enumerate(rounded_best_df.columns):
+                max_len = max(rounded_best_df[column].apply(lambda x: len(str(x)) if isinstance(x, str) else 0))  # Find max length of text in column
+                col_widths.append(min(max_len, max_width))  # Set the width to max length or max width
+                    # Manually set column widths based on calculated values
+            for i, width in enumerate(col_widths):
+                table2.auto_set_column_width([i])  # This will set the width for each column individually
+            # Save table to PDF
+            pdf.savefig(fig_table2, dpi=300, transparent=True, bbox_inches='tight')
+            plt.close(fig_table2)
 
     print("PDF report generated successfully.")
     return(directory, file_name)
