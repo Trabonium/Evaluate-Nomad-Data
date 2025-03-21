@@ -11,15 +11,16 @@ def create_directory(path):
         os.makedirs(path)
 
 def show_auto_close_message(title, message, timeout=3000):
-    msg_window = tk.Toplevel()
+    msg_window = tk.Toplevel(root)  # Attach to main window
     msg_window.title(title)
     msg_window.geometry("300x100")
-    
+
     label = ttk.Label(msg_window, text=message, wraplength=280)
     label.pack(expand=True, padx=10, pady=10)
-    
-    msg_window.after(timeout, msg_window.destroy)  # Auto close after timeout (in ms)
-    msg_window.mainloop()
+
+    msg_window.after(timeout, msg_window.destroy)  # Auto close after timeout
+    root.update_idletasks()  # Update GUI without blocking execution
+
 
 def move_mpp_files(path):
     newdirMPP = os.path.join(path, "MaxPowerPointTracking")
@@ -67,21 +68,40 @@ def move_soak_files(path, cycle_to_keep, preserve_cycle):
         #Add preserve cycle fuction with "_" after .px
     show_auto_close_message("Success", "Moved Soak files.", 2000)
 
-def rename_files(path, cycle_to_keep):
+def rename_files(path, cycle_to_keep, preserve_cycle):
     rename_patterns = {
-        f"*Cycle_{cycle_to_keep}_illu*": ".jv",
-        "*_01_*": ".px1",
-        "*_02_*": ".px2",
-        "*_03_*": ".px3",
-        "*_04_*": ".px4"
+        "_01_": ".px1",
+        "_02_": ".px2",
+        "_03_": ".px3",
+        "_04_": ".px4"
     }
-    
-    for pattern, replacement in rename_patterns.items():
-        for file in glob.iglob(os.path.join(path, pattern)):
-            basename_old = os.path.basename(file)
-            new_name = os.path.join(path, basename_old.replace(pattern.split("*")[1], replacement))
-            os.rename(file, new_name)
+
+    if preserve_cycle:
+        # Process all cycles instead of a specific one
+        cycle_pattern = "*Cycle_*_illu*.csv"
+    else:
+        cycle_pattern = f"*Cycle_{cycle_to_keep}_illu*.csv"
+
+    for file in glob.iglob(os.path.join(path, cycle_pattern)):
+        basename_old = os.path.basename(file)
+        new_name = basename_old.replace("_illu", "")  # Remove "_illu"
+
+        # Insert .jv before .csv
+        if new_name.endswith(".csv"):
+            new_name = new_name[:-4] + ".jv.csv"
+
+        # Apply renaming patterns for pixel numbers
+        for pattern, replacement in rename_patterns.items():
+            if pattern in new_name:
+                new_name = new_name.replace(pattern, replacement)
+
+        new_file_path = os.path.join(path, new_name)
+        os.rename(file, new_file_path)
+
     show_auto_close_message("Success", "Files renamed successfully.", 2000)
+
+
+
 
 def browse_directory():
     path = filedialog.askdirectory(title="Select Directory")
@@ -106,7 +126,7 @@ def start_processing():
     if confirmation:
         move_mpp_files(path)
         move_soak_files(path, cycle_to_keep, preserve_cycle)
-        rename_files(path, cycle_to_keep)
+        rename_files(path, cycle_to_keep, preserve_cycle)
         messagebox.showinfo("Done", "All tasks completed successfully.")
 
 # GUI Setup

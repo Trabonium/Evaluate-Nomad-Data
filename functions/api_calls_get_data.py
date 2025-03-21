@@ -56,7 +56,7 @@ def get_quantity_over_jv(samples_of_batch: pd.DataFrame, key_1, quantities: list
         key_1 = [key_1]
     # collect the results of the sample, in this case it are all the annealing temperatures
     df_q = pd.DataFrame(columns=["entry_id","sample_id"]+quantities)
-    df_jv = pd.DataFrame(columns=["entry_id"]+["px#"]+["scan_direction"]+jv_quantities)
+    df_jv = pd.DataFrame(columns=["entry_id"]+["px#"]+['Cycle#']+["scan_direction"]+jv_quantities)
 
     for index, row in samples_of_batch.iterrows():
         sample_id = row['entry_id']
@@ -91,7 +91,8 @@ def get_quantity_over_jv(samples_of_batch: pd.DataFrame, key_1, quantities: list
             if "JVmeasurement" in link["archive"]["metadata"]["entry_type"]:
                 row = {"entry_id": sample_id}
                 for curve in link["archive"]["data"]["jv_curve"]:
-                    row['px#'] = link["archive"]["data"]["description"].split(': ')[1] # extract pixel nr from notes 
+                    row['px#'] = link["archive"]["data"]["description"].split(': ')[1][0:3] # extract pixel nr from notes 
+                    row['Cycle#'] = link["archive"]["data"]["description"].split('Cycle_')[1] # extract pixel nr from notes
                     row["scan_direction"] = (  #scan direction
                         "backwards" if curve["cell_name"] == "Current density [1] [mA/cm^2]" else
                         "forwards" if curve["cell_name"] == "Current density [2] [mA/cm^2]" else
