@@ -3,7 +3,7 @@ experiment_ids:
   type: pandas.ExcelDataset
   load_args:
     header: 1
-    #usecols: 'A:E,H:AZ' example if only certain columns should be loaded
+    usecols: 'A:G,BU'
 
 complete_data:
   filepath: data/03_primary/complete_data.pkl

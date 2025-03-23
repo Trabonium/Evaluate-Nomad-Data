@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 
-def get_entryid(sample_ids: list[str], nomad_url: str, token):  # give it a batch id
+def get_entryid(sample_ids: list[str], nomad_url: str, token) -> pd.DataFrame:  # give it a batch id
     # get all entries related to this batch id
     query = {
         'required': {
