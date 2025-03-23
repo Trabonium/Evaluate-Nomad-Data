@@ -9,8 +9,13 @@ import pandas as pd
 import numpy as np
 
 
-def get_entryid(sample_ids: list[str], nomad_url: str, token) -> pd.DataFrame:  # give it a batch id
-    # get all entries related to this batch id
+def get_entryid(sample_ids: list[str], nomad_url: str, token) -> pd.DataFrame:
+    """gets all entry ids for a given list of batch identifiers.
+    sample_ids: a list of batch identifiers to search the entry ids for
+    token: access token for the database
+
+    returns: A Dataframe with two columns, 'entry_name' for the intitially given batch id and 'entry_id' for the corresponding nomad id
+    """
     query = {
         'required': {
             #'metadata': '*'

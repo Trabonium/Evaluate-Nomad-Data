@@ -62,7 +62,6 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     with_id['results'] = with_id['results'].apply(lambda x: x['properties']['optoelectronic']['solar_cell']['efficiency'] if(pd.notnull(x)) else None)
     with_id = with_id.rename(columns={'results': 'efficiency'})
     
-    #with_id = get_entryid(list(experiment_ids['Nomad ID']), nomad_url, token)
     experiment_ids = experiment_ids.rename(columns={'Nomad ID': 'entry_name'})
     experiment_ids = experiment_ids.join(with_id.set_index('entry_name'), on='entry_name')
     id_list = list(experiment_ids['entry_id'])
@@ -110,6 +109,7 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
             try:
                 rota_time_2 = entry['archive']['data']['recipe_steps'][1]['time']
                 dropping_time = entry['archive']['data']['quenching']['anti_solvent_dropping_time']
+                #dropping speed is currently missing in the database
                 #dropping_speed = entry['archive']['data']['quenching']['anti_solvent_dropping_flow_rate']
             except KeyError:
                 #if one of these values is missing, the samples using this step can't be used
@@ -117,6 +117,7 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
             for referenced_sample in entry['archive']['metadata']['entry_references']:
                 step_data.append([referenced_sample['target_entry_id'], rota_time_2, dropping_time])
 
+    #join the queried step parameters on the entry ids in the main Dataframe
     step_data_df = pd.DataFrame(data=step_data, columns=['entry_id', 'rotation_time_2', 'dropping_time'])
     step_data_df = step_data_df.drop_duplicates()
     experiment_ids = experiment_ids.join(step_data_df.set_index('entry_id'), on='entry_id', validate='1:1')

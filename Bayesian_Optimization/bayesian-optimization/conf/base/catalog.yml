@@ -3,6 +3,7 @@ experiment_ids:
   type: pandas.ExcelDataset
   load_args:
     header: 1
+    #BU is the column for dropping speed. It's currently not in the database so it's temporarily required in the Excel file
     usecols: 'A:G,BU'
 
 complete_data:
