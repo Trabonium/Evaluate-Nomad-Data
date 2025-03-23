@@ -117,7 +117,7 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
             for referenced_sample in entry['archive']['metadata']['entry_references']:
                 step_data.append([referenced_sample['target_entry_id'], rota_time_2, dropping_time])
 
-    step_data_df = pd.DataFrame(data=step_data, columns=['entry_id', 'rota_time_2', 'dropping_time'])
+    step_data_df = pd.DataFrame(data=step_data, columns=['entry_id', 'rotation_time_2', 'dropping_time'])
     step_data_df = step_data_df.drop_duplicates()
     experiment_ids = experiment_ids.join(step_data_df.set_index('entry_id'), on='entry_id', validate='1:1')
 
@@ -125,9 +125,22 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
 
 
 def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
-    #convert 
-    pass
+    #convert data types, clean data and create new columns that are entirely predecated on existing columns
+    #rename columns
+    experiment_data = experiment_data.rename(columns={'Anti solvent dropping speed [uL/s]': 'dropping_speed'})
+    
+    #convert column types into more fitting ones
+    experiment_data['Date'] = experiment_data['Date'].apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
+    experiment_data = experiment_data.astype(dtype={'Sample': int, 'Subbatch': int, 'Variation': int})
+
+
+    rotation_time_before = 10
+    experiment_data['time_after'] = rotation_time_before + experiment_data['rotation_time_2'] - experiment_data['dropping_time']
+    
+    experiment_data.dropna(how='any', subset=['efficiency', 'dropping_speed', 'time_after', 'dropping_time'], inplace=True)
+    return experiment_data
 
 def make_prediction(data: pd.DataFrame):
     #core Bayesian optimization implementation
+    
     pass
