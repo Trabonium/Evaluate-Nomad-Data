@@ -97,7 +97,7 @@ def get_quantity_over_jv(samples_of_batch: pd.DataFrame, key_1, quantities: list
                 row = {"entry_id": sample_id}
                 for curve in link["archive"]["data"]["jv_curve"]:
                     row['px#'] = link["archive"]["data"]["description"].split(': ')[1][0:3] # extract pixel nr from notes 
-                    row['Cycle#'] = link["archive"]["data"]["description"].split('Cycle_')[1] # extract pixel nr from notes
+                    row['Cycle#'] = link["archive"]["data"]["description"].split('Cycle_')[1] if 'Cycle_' in link["archive"]["data"]["description"] else None  # extract cycle number if present
                     row["scan_direction"] = (  #scan direction
                         "backwards" if curve["cell_name"] == "Current density [1] [mA/cm^2]" else
                         "forwards" if curve["cell_name"] == "Current density [2] [mA/cm^2]" else
