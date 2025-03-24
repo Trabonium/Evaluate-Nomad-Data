@@ -121,16 +121,16 @@ def csv_filtered_export():
         show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
 def filter_page_2():
-    global filtered_data_page2, data
+    global filtered_data, data
     if data is None:
         messagebox.showerror("Error", "Please load your data first!")
         return
     try:
-        filtered_data_page2 = freier_filter(data, master=root)
+        filtered_data = freier_filter(data, master=root)
 
         #ausgabe der gefilterten daten
-        common_cols = list(data.columns.intersection(filtered_data_page2.columns))
-        df_diff = data.merge(filtered_data_page2, on=common_cols, how='left', indicator=True)
+        common_cols = list(data.columns.intersection(filtered_data.columns))
+        df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
         df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
         print(df_A_only)
 
@@ -347,7 +347,7 @@ for frame in [frame1, frame2, frame3]:
 
 notebook.add(frame1, text="solar cell data evaluation")
 notebook.add(frame2, text="halfstack data evaluation")
-notebook.add(frame3, text="Spielereien")
+notebook.add(frame3, text="tools")
 notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="ew")
 
 
