@@ -16,6 +16,7 @@ from functions.UVVis_merge_Eln import UVVis_merge
 from functions.Renaming_Measurements_and_Folders import Renaming_folders
 from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
+from functions.rename_JV_Daniel import measurement_file_organizer
 
 # Globale Variablen
 selected_file_path = None
@@ -139,20 +140,39 @@ def filter_page_2():
         messagebox.showerror("Error", f"Filtering gone wrong: {e}")
 
 def merge_UVVis_files():
-    UVVis_merge(master=root)
-    show_auto_close_message("Success", "Back to the normal window!", 2000)
+    try:
+        UVVis_merge(master=root)
+        show_auto_close_message("Success", "Back to the normal window!", 2000)
+    except:
+        messagebox.showerror("Error", "Something went wrong with the UVVis merging.")
 
 def Rename_folders_and_measurements():
-    Renaming_folders(master=root)
-    show_auto_close_message("Success", "Back to the normal window!", 2000)
+    try:
+        Renaming_folders(master=root)
+        show_auto_close_message("Success", "Back to the normal window!", 2000)
+    except:
+        messagebox.showerror("Error", "Something went wrong with the renaming.")
 
 def excel_creator_function():
-    Excel_GUI(master=root)
-    show_auto_close_message("Success", "Back to the normal window!", 2000)
+    try:
+        Excel_GUI(master=root)
+        show_auto_close_message("Success", "Back to the normal window!", 2000)
+    except:
+        messagebox.showerror("Error", "Something went wrong with the Excel creator.")
 
 def EQE_Joshua():
-    GUI_fuer_Joshuas_EQE(master=root)
-    show_auto_close_message("Success", "Back to the normal window!", 2000)
+    try:
+        GUI_fuer_Joshuas_EQE(master=root)
+        show_auto_close_message("Success", "Back to the normal window!", 2000)
+    except:
+        messagebox.showerror("Error", "Something went wrong with the EQE plotting.")
+
+def Rename_JV_files():
+    try:
+        measurement_file_organizer(master=root)
+        show_auto_close_message("Success", "Back to the normal window!", 2000)
+    except:
+        messagebox.showerror("Error", "Something went wrong with the JV file renaming.")
 
 def generate_report():
     global data, stats, directory, file_name, filtered_data, best
@@ -413,9 +433,10 @@ for text, command, tooltip in buttons_info3:
 
 buttons_info4 = [ #buttons für frame 3
     ("UVVis merge", merge_UVVis_files, "Merge your UVVis R & T files."),
-    ("Folder and Measurement Renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
+    ("Old data renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
-    ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data.")
+    ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
+    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format.")
 ]
 
 row_index = 1

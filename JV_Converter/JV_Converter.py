@@ -5,7 +5,7 @@ import csv
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from tkinter import ttk
-
+#kopie für main gui integration liegt unter functions.rename_JV_Daniel
 def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
