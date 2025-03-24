@@ -81,10 +81,10 @@ def Renaming_folders(master):
                 if stringabfrage:
                     pixel, cycle_measurement = stringabfrage
                     cut = 20 if len(file) > 20 else 4
-                    new_file_name = f"KIT_{kuerzel}_{datum}_{file[:-cut].replace('_','-')}_0_{i}.px{pixel}.cycle{cycle_measurement}.{prozessart}.{file[-3:]}"
+                    new_file_name = f"KIT_{kuerzel}_{datum}_{file[:-cut].replace('_','-')}_0_{i}.px{pixel}Cycle_{cycle_measurement}.{prozessart}.{file[-3:]}"
                 else:
                     cut = 4
-                    new_file_name = f"KIT_{kuerzel}_{datum}_{file[:-4].replace('_','-')}_0_{i}.px0.cycle0.{prozessart}.{file[-3:]}"
+                    new_file_name = f"KIT_{kuerzel}_{datum}_{file[:-4].replace('_','-')}_0_{i}.px0Cycle_0.{prozessart}.{file[-3:]}"
 
                 new_file_path = os.path.join(pfad, new_file_name)
                 os.rename(old_file_path, new_file_path)
