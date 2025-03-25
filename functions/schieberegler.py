@@ -2,6 +2,15 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 
+def filter_best_efficiency(df): #sortinng cycle sorting via best PCE
+    # Sortieren nach den relevanten Spalten und Effizienz
+    df_sorted = df.sort_values(by=['sample_id', 'variation', 'px#', 'scan_direction', 'efficiency'], ascending=[True, True, True, True, False])
+    
+    # Entfernen von Duplikaten und Behalten der Zeile mit der höchsten Effizienz
+    df_filtered = df_sorted.drop_duplicates(subset=['sample_id', 'variation', 'px#', 'scan_direction'], keep='first')
+    
+    return df_filtered
+
 def create_cycle_buttons(parent, cycles, filtered_df):
     frame = ttk.Frame(parent)
     frame.pack(fill=tk.X, padx=20, pady=10)
