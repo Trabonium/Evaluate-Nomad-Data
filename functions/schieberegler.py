@@ -29,7 +29,7 @@ def create_cycle_buttons(parent, cycles, filtered_df):
             return
 
         if cycle not in filtered_df["Cycle#"].values:
-            print(f"Warnung: Cycle {cycle} nicht im DataFrame gefunden!")
+            print(f"Warnung: Cycle {cycle} not found in data!")
             return
 
         current_status = filtered_df.loc[filtered_df["Cycle#"] == cycle, "cyclefilter"]
@@ -37,7 +37,7 @@ def create_cycle_buttons(parent, cycles, filtered_df):
             new_status = not current_status.iloc[0]  # Wechsel zwischen True/False
             filtered_df.loc[filtered_df["Cycle#"] == cycle, "cyclefilter"] = new_status
             buttons[cycle]["bg"] = "red" if not new_status else "green"
-            print(f"Cycle {cycle} ist jetzt {'aktiv' if new_status else 'deaktiviert'}")
+            #print(f"Cycle {cycle} ist jetzt {'aktiv' if new_status else 'deaktiviert'}")
 
     # Funktion für die Checkbox
     def toggle_best_efficiency():
@@ -49,7 +49,7 @@ def create_cycle_buttons(parent, cycles, filtered_df):
                 btn.config(bg="green", state=tk.NORMAL)  # Buttons aktivieren und zurücksetzen
 
     # Checkbox erstellen
-    checkbox = ttk.Checkbutton(frame, text="Nur bester Cycle", variable=best_efficiency_var, command=toggle_best_efficiency)
+    checkbox = ttk.Checkbutton(frame, text="Only best cycle?", variable=best_efficiency_var, command=toggle_best_efficiency)
     checkbox.pack(pady=5)
 
     # Button-Frame erstellen
@@ -288,12 +288,13 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
     
     if best_efficiency_var.get():
-        print("Filtert nur den besten Cycle pro Variation")
+        #print("Filtert nur den besten Cycle pro Variation")
         filtered_df = filter_best_efficiency(filtered_df)
     else:
+        best_efficiency_var = False
         filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Nur aktive Zyklen behalten
 
     filtered_df = filtered_df.drop(columns=["cyclefilter"])  # Spalte entfernen, bevor DataFrame zurückgegeben wird
 
 
-    return(filtered_df, df_min_max_self)
+    return(filtered_df, df_min_max_self, best_efficiency_var)

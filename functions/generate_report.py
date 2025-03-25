@@ -12,7 +12,7 @@ def sanitize_filename(filename):
     return re.sub(r'[\/:*?"<>|]', '_', filename)
 
 # Generate PDF Report
-def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nomad_url, token):
+def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nomad_url, token, filter_cycle_boolean):
     """
     Generates a PDF report with selected plots and data tables.
 
@@ -72,7 +72,7 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
         # Include Box and Scatter Plots for PCE, FF, Voc, Jsc
         if include_plots.get('Box+Scatter', False):
             SeparateScanDir = include_plots.get('SeparateScan', False)
-            fig = plot_box_and_scatter(df, 'variation', SeparateScanDir)
+            fig = plot_box_and_scatter(df, filter_cycle_boolean, 'variation', SeparateScanDir)
             if include_plots.get('Picture', False):
                 fig.savefig(directory+"/"+ file_name[:-4]+"_boxplot.png", dpi = 500, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')

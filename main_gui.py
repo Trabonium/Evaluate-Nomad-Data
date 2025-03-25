@@ -26,6 +26,7 @@ best = None
 token = None
 directory = None
 file_name = None
+filter_cycle_boolean = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
 
@@ -79,12 +80,12 @@ def load_data():
 
 # Daten filtern
 def filter_data():
-    global filtered_data, data
+    global filtered_data, data, filter_cycle_boolean
     if data is None:
         messagebox.showerror("Error", "Please load your data first!")
         return
     try:
-        filtered_data, _ = main_filter(data, master=root)
+        filtered_data, _, filter_cycle_boolean = main_filter(data, master=root)
         print(filtered_data)
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         show_auto_close_message("Success", "Data filtered!", 2000)
@@ -177,7 +178,7 @@ def Rename_JV_files():
         messagebox.showerror("Error", "Something went wrong with the JV file renaming.")
 
 def generate_report():
-    global data, stats, directory, file_name, filtered_data, best
+    global data, stats, directory, file_name, filtered_data, best, filter_cycle_boolean
 
     if data is None or stats is None:
         messagebox.showerror("Error", "Please load data and calculate statistics first.")
@@ -200,11 +201,11 @@ def generate_report():
         return
 
     try:
-        directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
+        directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token, filter_cycle_boolean)
         show_auto_close_message("Success", f"PDF report with filtered data saved to: {file_path}", 2000)
     except:
         try:
-            directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token)
+            directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token,filter_cycle_boolean)
             show_auto_close_message("Success", f"PDF report with raw data saved to: {file_path}", 2000)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
