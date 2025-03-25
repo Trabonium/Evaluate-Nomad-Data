@@ -132,10 +132,10 @@ def filter_page_2():
         filtered_data = freier_filter(data, master=root)
 
         #ausgabe der gefilterten daten
-        common_cols = list(data.columns.intersection(filtered_data.columns))
-        df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
-        df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
-        print(df_A_only)
+        #common_cols = list(data.columns.intersection(filtered_data.columns))
+        #df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
+        #df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
+        #print(df_A_only)
 
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         show_auto_close_message("Success", "Data filtered!", 2000)
