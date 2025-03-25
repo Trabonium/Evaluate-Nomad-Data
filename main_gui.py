@@ -71,7 +71,8 @@ def load_data():
         return
     try:
         data = get_data_excel_to_df(selected_file_path, nomad_url, token)
-        #print(data)
+        print(data)
+        print(data.columns)
         show_auto_close_message("Success", "Data loaded!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Data could not be loaded: {e}")
@@ -84,6 +85,7 @@ def filter_data():
         return
     try:
         filtered_data, _ = main_filter(data, master=root)
+        print(filtered_data)
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:

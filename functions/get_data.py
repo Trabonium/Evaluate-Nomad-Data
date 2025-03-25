@@ -12,7 +12,7 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_Spin
     columns_from_excel=[['sample_id', 5], ['variation', 6]]) -> pd.DataFrame:
     """columns_from excel: list of pairs of column name and column number (starting at 0) that will be read from the excel file.
     """
-    print(columns_from_excel)
+    #print(columns_from_excel)
     #file_path = path + "ExperimentsInfo.xlsx"  
     
     workbook = load_workbook(filename=excel_file_path, data_only=True)
@@ -25,7 +25,7 @@ def get_data_excel_to_df(excel_file_path, nomad_url, token, key=["peroTF_CR_Spin
         for pair in columns_from_excel:
             current_row.append(row[pair[1]])
         data.append(current_row)
-    print(data)
+    #print(data)
     # Convert the extracted data to a DataFrame
     column_titles = [pair[0] for pair in columns_from_excel]
     

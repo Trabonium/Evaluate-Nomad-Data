@@ -2,8 +2,30 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 
-# Globale Variable für df_min_max_self
-#df_min_max_self = pd.DataFrame()
+def create_cycle_buttons(parent, cycles, filtered_df):
+    frame = ttk.Frame(parent)
+    frame.pack(fill=tk.X, padx=20, pady=10)
+    
+    title_label = ttk.Label(frame, text="Cycle Filter")
+    title_label.pack(pady=5, padx=10)
+    
+    buttons = {}
+
+    def toggle_cycle(cycle):
+        # Toggle Status im DataFrame setzen
+        is_active = filtered_df.loc[filtered_df["Cycle#"] == cycle, "cyclefilter"].iloc[0]
+        new_status = not is_active  # Wechsel zwischen True/False
+        filtered_df.loc[filtered_df["Cycle#"] == cycle, "cyclefilter"] = new_status
+        buttons[cycle]["bg"] = "red" if not new_status else "green"
+
+    button_frame = ttk.Frame(frame)
+    button_frame.pack()
+
+    for cycle in sorted(cycles):
+        btn = tk.Button(button_frame, text=str(cycle), bg="green", width=5, command=lambda c=cycle: toggle_cycle(c))
+        btn.pack(side=tk.LEFT, padx=5)
+        buttons[cycle] = btn
+
 
 # Funktion, um die Dual-Slider zu erstellen
 def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slider_id, update_df_func, first_slider):
@@ -25,7 +47,6 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     # Zeichne die Slider-Leiste
     canvas.create_line(10, 20, canvas_width - 10, 20, fill="grey", width=4)
 
-  
     # Initiale Positionen
     init_min_pos = 10 + ((init_min - min_val) / (max_val - min_val)) * (canvas_width - 20)
     init_max_pos = 10 + ((init_max - min_val) / (max_val - min_val)) * (canvas_width - 20)
@@ -105,7 +126,7 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
 
 
 # Funktion, um die Schieberegler und den Speichern-Button hinzuzufügen
-def open_sliders_window(filter_window, df_min_max_bounds, master):
+def open_sliders_window(filter_window, df_min_max_bounds, master, cycles, filtered_df):
     # Rahmen für Scrollbereich erstellen
     container = ttk.Frame(filter_window)
     container.pack(fill="both", expand=True)
@@ -147,6 +168,11 @@ def open_sliders_window(filter_window, df_min_max_bounds, master):
             first_slider=(i==0) #first slider True bei erstem durchlauf. folge ist dass der erste vertikale strich geskipped wird
         )
 
+    if cycles is not None:
+        filtered_df["Cycle#"] = filtered_df["Cycle#"].astype(int)  # Erzwinge `int`-Typisierung
+        create_cycle_buttons(scrollable_frame, cycles, filtered_df)  # Kein update_df_func mehr nötig!
+
+    
     # Speichern-Button hinzufügen
     def save_and_close():
         filter_window.destroy()
@@ -154,10 +180,8 @@ def open_sliders_window(filter_window, df_min_max_bounds, master):
     save_button = ttk.Button(scrollable_frame, text="Save", command=save_and_close)
     save_button.pack(pady=20)
 
-
-
 # Funktion zum Starten des Programms
-def schieberegler_main(filter_window, filtered_df, master):
+def schieberegler_main(filter_window, filtered_df, master, cycles):
     global df_min_max_self
 
     # Erstelle df_min_max_bounds mit Min- und Max-Werten
@@ -179,7 +203,7 @@ def schieberegler_main(filter_window, filtered_df, master):
 
     df_min_max_self = df_min_max_bounds.copy()
 
-    open_sliders_window(filter_window, df_min_max_bounds, master)
+    open_sliders_window(filter_window, df_min_max_bounds, master, cycles, filtered_df)
 
 
 # Update-Funktion für den DataFrame
@@ -188,22 +212,25 @@ def update_df_func(slider_id, param, value):
 
 def main_filter(df_default_werte, master):
     filtered_df = df_default_werte.copy() #zuerst kopie definieren
-    # NaNs rauswerfen
-    filtered_df = filtered_df.dropna(subset=['efficiency'])
-    filtered_df = filtered_df.dropna(subset=['fill_factor'])
-    filtered_df = filtered_df.dropna(subset=['open_circuit_voltage'])
-    filtered_df = filtered_df.dropna(subset=['short_circuit_current_density'])
+    filtered_df['cyclefilter'] = True
+
+    # NaNs entfernen
+    filtered_df = filtered_df.dropna(subset=['efficiency', 'fill_factor', 'open_circuit_voltage', 'short_circuit_current_density'])
 
     filter_window = tk.Toplevel(master)
     filter_window.title("Dual Sliders")
     filter_window.geometry("400x700")
 
-    schieberegler_main(filter_window, filtered_df, master) #hier werden die grenzenn zum filtern gesetzt
+    cycles = None
+    #print(filtered_df.columns)
+
+    if "Cycle#" in filtered_df.columns:
+        cycles = filtered_df["Cycle#"].dropna().unique().astype(int)
+
+    schieberegler_main(filter_window, filtered_df, master, cycles) #hier werden die grenzenn zum filtern gesetzt
 
     filter_window.grab_set()
     filter_window.wait_window()
-    
-    # Tkinter Mainloop starten
 
     #filtergrößen:
     min_pce = df_min_max_self[df_min_max_self["Parameter"] == "PCE"]["Min"].values[0]
@@ -220,4 +247,9 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df[(filtered_df['fill_factor'] >= min_ff) & (filtered_df['fill_factor'] <= max_ff)]
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
+    
+    filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Behalte nur aktiv gesetzte Cycle-Werte
+    filtered_df = filtered_df.drop(columns=["cyclefilter"])  # Spalte entfernen, bevor DataFrame zurückgegeben wird
+
+
     return(filtered_df, df_min_max_self)
