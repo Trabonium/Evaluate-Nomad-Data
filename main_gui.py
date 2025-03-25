@@ -464,5 +464,4 @@ if credentials.__contains__('nomad_db'):
     password_entry.insert(0,credentials['nomad_db']['password'])
     show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
 
-
 root.mainloop()
