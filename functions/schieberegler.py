@@ -207,6 +207,8 @@ def open_sliders_window(filter_window, df_min_max_bounds, master, cycles, filter
     if cycles is not None:
         filtered_df["Cycle#"] = filtered_df["Cycle#"].astype(int)  # Erzwinge `int`-Typisierung
         best_efficiency_var = create_cycle_buttons(scrollable_frame, cycles, filtered_df)  # Kein update_df_func mehr nötig!
+    else:
+        best_efficiency_var = False
 
     
     # Speichern-Button hinzufügen
@@ -263,7 +265,7 @@ def main_filter(df_default_werte, master):
     cycles = None
     #print(filtered_df.columns)
 
-    if "Cycle#" in filtered_df.columns:
+    if "Cycle#" in filtered_df.columns and filtered_df["Cycle#"].notna().all():
         cycles = filtered_df["Cycle#"].dropna().unique().astype(int)
 
     best_efficiency_var = schieberegler_main(filter_window, filtered_df, master, cycles) #hier werden die grenzenn zum filtern gesetzt
@@ -287,13 +289,15 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
     
-    if best_efficiency_var.get():
+    if best_efficiency_var:
         #print("Filtert nur den besten Cycle pro Variation")
         filtered_df = filter_best_efficiency(filtered_df)
     else:
-        best_efficiency_var = False
-        filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Nur aktive Zyklen behalten
-
+        if filtered_df["Cycle#"].notna().all():
+            filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Nur aktive Zyklen behalten
+        #else:
+        #    gib die daten ungefiltert zurück die cycle info nicht existiert
+        
     filtered_df = filtered_df.drop(columns=["cyclefilter"])  # Spalte entfernen, bevor DataFrame zurückgegeben wird
 
 
