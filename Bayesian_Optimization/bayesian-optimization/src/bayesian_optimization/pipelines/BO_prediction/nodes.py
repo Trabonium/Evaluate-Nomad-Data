@@ -65,13 +65,13 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
 
     #get the step parameters from entries referencing the entry ids
     query = {'required': {
-        'metadata': '*',
-        'data': '*',
+        'metadata': {'entry_references': '*'},
+        'data': {'positon_in_experimental_plan': '*', 'recipe_steps': '*', 'quenching': '*'},
         },'owner': 'visible',
         'query':{
             'entry_references.target_entry_id':{'any': id_list},
             'entry_type': 'peroTF_SpinCoating',
-            #'positon_in_experimental_plan': '3'
+            #'archive': {'data': {'positon_in_experimental_plan': '3.0'}}
         },
         'pagination': {'page_size': 100}}
 
@@ -169,13 +169,13 @@ def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     
     #convert column types into more fitting ones
     experiment_data['Date'] = experiment_data['Date'].apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
-    experiment_data = experiment_data.astype(dtype={'Sample': int, 'Subbatch': int, 'Variation': int})
+    experiment_data = experiment_data.astype(dtype={'Sample': int, 'Subbatch': int})
 
 
     rotation_time_before = 10
     experiment_data['time_after'] = rotation_time_before + experiment_data['rotation_time_2'] - experiment_data['dropping_time']
     
-    experiment_data.dropna(how='any', subset=['dropping_speed', 'time_after', 'dropping_time'], inplace=True)
+    experiment_data.dropna(how='any', subset=['dropping_speed', 'time_after', 'dropping_time', 'efficiency_forward', 'efficiency_backward'], inplace=True)
     return experiment_data
 
 def make_prediction(data: pd.DataFrame):
