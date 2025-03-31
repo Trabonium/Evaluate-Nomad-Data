@@ -34,10 +34,10 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     experiment_ids.dropna(how='any', subset='Nomad ID', inplace=True)
     sample_ids = list(experiment_ids['Nomad ID'])
 
-    #query the entry id and efficiency from the main page
+    #query the entry id from the main page
     query = {
         'required': {
-            'include': ['entry_id', 'entry_name', 'results.properties.optoelectronic.solar_cell.efficiency']
+            'include': ['entry_id', 'entry_name']
         },
         'owner': 'visible',
         'query': {'results.eln.lab_ids': {'any': sample_ids}},
@@ -58,9 +58,6 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
         f'{nomad_url}/entries/query', headers={'Authorization': f'Bearer {token}'}, json=query).json()
         data = response['data']
         with_id = pd.concat([with_id, pd.DataFrame(data)], ignore_index=True)
-    #results column contains nested dicts
-    with_id['results'] = with_id['results'].apply(lambda x: x['properties']['optoelectronic']['solar_cell']['efficiency'] if(pd.notnull(x)) else None)
-    with_id = with_id.rename(columns={'results': 'efficiency'})
     
     experiment_ids = experiment_ids.rename(columns={'Nomad ID': 'entry_name'})
     experiment_ids = experiment_ids.join(with_id.set_index('entry_name'), on='entry_name')
@@ -122,6 +119,46 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     step_data_df = step_data_df.drop_duplicates()
     experiment_ids = experiment_ids.join(step_data_df.set_index('entry_id'), on='entry_id', validate='1:1')
 
+    #get efficiency from pixel measurements
+    
+    query = {'required': {
+        'data': {'name': '*', 'jv_curve': '*'}
+        },'owner': 'visible',
+        'query':{
+            'entry_references.target_entry_id':{'any': id_list},
+            'entry_type': 'peroTF_JVmeasurement',
+        },
+        'pagination': {'page_size': 100}}
+    next_page = 'dummy_enter_once'
+    efficiencies = []
+
+    #execute DB query and fetch all pages
+    while(next_page):
+        if(next_page == 'dummy_enter_once'):
+            next_page = None
+        else:
+            query['pagination']['page_after_value'] = next_page
+    
+
+        response = requests.post(
+            f'{nomad_url}/entries/archive/query', headers={'Authorization': f'Bearer {token}'}, json=query).json()
+        
+        for entry in response['data']:
+            try:
+                entry_name, pixel = entry['archive']['data']['name'].split()
+                efficiency_backward = entry['archive']['data']['jv_curve'][0]['efficiency']
+                efficiency_forward = entry['archive']['data']['jv_curve'][1]['efficiency']
+                efficiencies.append([entry_name, pixel, efficiency_backward, efficiency_forward])
+            except KeyError:
+                #one of the data points is missing, so instead of initializing it as None and dropping it later, it is skipped here
+                continue
+        
+        next_page = response['pagination'].get('next_page_after_value')
+    
+    pixel_data = pd.DataFrame(data=efficiencies, columns=['entry_name', 'pixel', 'efficiency_backward', 'efficiency_forward'])
+    experiment_ids = experiment_ids.join(pixel_data.set_index('entry_name'), on='entry_name', validate='1:m')
+    experiment_ids = experiment_ids.reset_index()
+
     return experiment_ids
 
 
@@ -138,7 +175,7 @@ def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     rotation_time_before = 10
     experiment_data['time_after'] = rotation_time_before + experiment_data['rotation_time_2'] - experiment_data['dropping_time']
     
-    experiment_data.dropna(how='any', subset=['efficiency', 'dropping_speed', 'time_after', 'dropping_time'], inplace=True)
+    experiment_data.dropna(how='any', subset=['dropping_speed', 'time_after', 'dropping_time'], inplace=True)
     return experiment_data
 
 def make_prediction(data: pd.DataFrame):
