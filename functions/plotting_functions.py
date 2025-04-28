@@ -212,6 +212,7 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
 def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], SeparateScanDir=False):
+    print("boolean: ", filter_cycle_boolean)
     # Define the base color palette for unique variations
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df[quantity].unique())))
 
@@ -299,7 +300,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
                        boxprops=dict(facecolor=color, color='black'),
                        medianprops=medianprops)
             
-        if filter_cycle_boolean: 
+        if filter_cycle_boolean: #hier optimum
             for j, group in enumerate(sorted_groups):
                     if SeparateScanDir:
                         # Separate data into backward and forward scan directions
@@ -328,9 +329,9 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
                     jittered_x = np.random.normal(loc=group_position, scale=0.05, size=len(group_data))
                     ax.scatter(jittered_x, group_data, color='black', alpha=0.9, zorder=2, s=25, marker='o')
 
-        else:
-            for k, cyclegroup in enumerate(sorted(df['Cycle#'].unique())):
-                alpha = 0.9 - k / len(df['Cycle#'].unique())
+        else: #falls nur nans sind geht das hier schief das muss extra abgedeckt werden
+            if df['Cycle#'].isna().all():
+                alpha = 0.9 
                 # Overlay the scatter plot with black points
                 for j, group in enumerate(sorted_groups):
                     if SeparateScanDir:
@@ -339,8 +340,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
                             base_group = group[:-3]  # Remove "_bw" suffix
                             group_data = df[
                                 (df[quantity] == base_group) & 
-                                (df['scan_direction'] == 'backwards') &
-                                (df['Cycle#'] == cyclegroup)
+                                (df['scan_direction'] == 'backwards') 
                             ][jv_quantity[i]].dropna()
                             # Apply shift to the left for backward scans
                             group_position = positions[j]/2 + 0.3
@@ -348,22 +348,54 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
                             base_group = group[:-3]  # Remove "_fw" suffix
                             group_data = df[
                                 (df[quantity] == base_group) & 
-                                (df['scan_direction'] == 'forwards') &
-                                (df['Cycle#'] == cyclegroup)
+                                (df['scan_direction'] == 'forwards') 
                             ][jv_quantity[i]].dropna()
                             # Apply shift to the right for forward scans
                             group_position = positions[j]/2 + 0.2
                     else:
                         # Group data by variation only
-                        group_data = df[(df[quantity] == group) & (df['Cycle#'] == cyclegroup)][jv_quantity[i]].dropna()
+                        group_data = df[(df[quantity] == group)][jv_quantity[i]].dropna()
                         group_position = positions[j]
 
                     # Add jitter to x positions
                     jittered_x = np.random.normal(loc=group_position, scale=0.05, size=len(group_data))
-                    ax.scatter(jittered_x, group_data, color='black', alpha=alpha, zorder=2, s=25, marker=scatter_cycle_marker[k+1])
+                    ax.scatter(jittered_x, group_data, color='black', alpha=alpha, zorder=2, s=25, marker=scatter_cycle_marker[1])
+
+                
+            else:
+                for k, cyclegroup in enumerate(sorted(df['Cycle#'].unique())):
+                    alpha = 0.9 - k / len(df['Cycle#'].unique())
+                    # Overlay the scatter plot with black points
+                    for j, group in enumerate(sorted_groups):
+                        if SeparateScanDir:
+                            # Separate data into backward and forward scan directions
+                            if group.endswith("_bw"):
+                                base_group = group[:-3]  # Remove "_bw" suffix
+                                group_data = df[
+                                    (df[quantity] == base_group) & 
+                                    (df['scan_direction'] == 'backwards') &
+                                    (df['Cycle#'] == cyclegroup)
+                                ][jv_quantity[i]].dropna()
+                                # Apply shift to the left for backward scans
+                                group_position = positions[j]/2 + 0.3
+                            elif group.endswith("_fw"):
+                                base_group = group[:-3]  # Remove "_fw" suffix
+                                group_data = df[
+                                    (df[quantity] == base_group) & 
+                                    (df['scan_direction'] == 'forwards') &
+                                    (df['Cycle#'] == cyclegroup)
+                                ][jv_quantity[i]].dropna()
+                                # Apply shift to the right for forward scans
+                                group_position = positions[j]/2 + 0.2
+                        else:
+                            # Group data by variation only
+                            group_data = df[(df[quantity] == group) & (df['Cycle#'] == cyclegroup)][jv_quantity[i]].dropna()
+                            group_position = positions[j]
+
+                        # Add jitter to x positions
+                        jittered_x = np.random.normal(loc=group_position, scale=0.05, size=len(group_data))
+                        ax.scatter(jittered_x, group_data, color='black', alpha=alpha, zorder=2, s=25, marker=scatter_cycle_marker[k+1])
         
-
-
         # Axis label and Ticks
         ax.set_ylabel(f"{jv_quantity_labels[jv_quantity[i]]}", size=16)
         ax.set_xticks([i + 1 for i in range(len(sorted_variations))])

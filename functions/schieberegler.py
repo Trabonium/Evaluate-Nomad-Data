@@ -2,6 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 import pandas as pd
 
+global cycle_optimizing
+cycle_optimizing = False
+
 def filter_best_efficiency(df): #sortinng cycle sorting via best PCE
     # Sortieren nach den relevanten Spalten und Effizienz
     df_sorted = df.sort_values(by=['sample_id', 'variation', 'px#', 'scan_direction', 'efficiency'], ascending=[True, True, True, True, False])
@@ -41,10 +44,13 @@ def create_cycle_buttons(parent, cycles, filtered_df):
 
     # Funktion für die Checkbox
     def toggle_best_efficiency():
+        global cycle_optimizing
         if best_efficiency_var.get():
+            cycle_optimizing = True
             for btn in buttons.values():
                 btn.config(bg="gray", state=tk.DISABLED)  # Buttons deaktivieren und grau färben
         else:
+            cycle_optimizing = False
             for cycle, btn in buttons.items():
                 btn.config(bg="green", state=tk.NORMAL)  # Buttons aktivieren und zurücksetzen
 
@@ -252,6 +258,7 @@ def update_df_func(slider_id, param, value):
     df_min_max_self.at[slider_id, param] = value
 
 def main_filter(df_default_werte, master):
+    global cycle_optimizing
     filtered_df = df_default_werte.copy() #zuerst kopie definieren
     filtered_df['cyclefilter'] = True
 
@@ -270,8 +277,10 @@ def main_filter(df_default_werte, master):
 
     best_efficiency_var = schieberegler_main(filter_window, filtered_df, master, cycles) #hier werden die grenzenn zum filtern gesetzt
 
-    filter_window.grab_set()
+    filter_window.grab_set(),
     filter_window.wait_window()
+
+    print("jetzt richtig?: ", cycle_optimizing)
 
     #filtergrößen:
     min_pce = df_min_max_self[df_min_max_self["Parameter"] == "PCE"]["Min"].values[0]
@@ -289,16 +298,20 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
     
-    if best_efficiency_var:
+    if filtered_df['Cycle#'].isna().all():
+        cycle_optimizing = False
+
+    if cycle_optimizing:
         #print("Filtert nur den besten Cycle pro Variation")
         filtered_df = filter_best_efficiency(filtered_df)
     else:
         if filtered_df["Cycle#"].notna().all():
             filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Nur aktive Zyklen behalten
-        #else:
-        #    gib die daten ungefiltert zurück die cycle info nicht existiert
         
     filtered_df = filtered_df.drop(columns=["cyclefilter"])  # Spalte entfernen, bevor DataFrame zurückgegeben wird
 
+    #if the column 'Cycles#' are just Nones, the plotting function cant plot the scatter plot
+    #if filtered_df["Cycle#"].isna().all():
+    #    best_efficiency_var = True
 
-    return(filtered_df, df_min_max_self, best_efficiency_var)
+    return(filtered_df, df_min_max_self, cycle_optimizing)
