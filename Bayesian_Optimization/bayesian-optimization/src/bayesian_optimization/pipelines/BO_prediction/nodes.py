@@ -214,7 +214,9 @@ def _get_suggestion(optimizer: BayesianOptimization) -> dict[str, float]:
     suggestion_denormalized = _denormalize_columns(pd.DataFrame(data=suggestion, index=range(1)), normalization_bounds=BOUNDS)
     if (suggestion_denormalized['time_after'][0] + suggestion_denormalized['dropping_time'][0] > 45):
         optimizer.register(params=suggestion, target=0.0)
-        logger.info(f'optimizer suggested {suggestion_denormalized.head(1)}, which is outside the constrained space. Inserted dummy point with 0.0 efficiency.')
+        suggestion_string = ""
+        for c in suggestion_denormalized.columns: suggestion_string += c + "=" + str(suggestion_denormalized[c][0]) + "; "
+        logger.info(f'optimizer suggested {suggestion_string}which is outside the constrained space. Inserted dummy point with 0.0 efficiency.')
         #recursive call because the next suggestion could also be out of bounds
         suggestion = _get_suggestion(optimizer)
     
