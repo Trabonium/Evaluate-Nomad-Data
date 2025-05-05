@@ -1,12 +1,19 @@
 import pandas as pd
-import os, sys, requests
+import os, sys, requests, logging, math
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "..")))
 
 from kedro.config import OmegaConfigLoader
 from kedro.framework.project import settings
 from pathlib import Path
+from bayes_opt import BayesianOptimization, acquisition
 from functions.api_calls_get_data import get_entryid
+
+logger = logging.getLogger(__name__)
+
+#bounds suggested by Daniel
+#all input parameters must be specified here
+BOUNDS = {'dropping_time': (20, 44),'time_after': (1, 25), 'dropping_speed': (25, 1000)}
 
 def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     #get the experiment data from NOMAD db and add it to the df
@@ -161,6 +168,23 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
 
     return experiment_ids
 
+def _normalize_columns(df: pd.DataFrame, normalization_bounds: dict):
+    for label in normalization_bounds:
+        if not df.columns.__contains__(label):
+            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
+            return df
+        df[label] = (df[label] - normalization_bounds[label][0]) / (normalization_bounds[label][1] - normalization_bounds[label][0])
+
+    return df
+
+def _denormalize_columns(df: pd.DataFrame, normalization_bounds: dict):
+    for label in normalization_bounds:
+        if not df.columns.__contains__(label):
+            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
+            return df
+        df[label] = (df[label] * (normalization_bounds[label][1] - normalization_bounds[label][0])) + normalization_bounds[label][0]
+    
+    return df
 
 def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     #convert data types, clean data and create new columns that are entirely predecated on existing columns
@@ -174,11 +198,106 @@ def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
 
     rotation_time_before = 10
     experiment_data['time_after'] = rotation_time_before + experiment_data['rotation_time_2'] - experiment_data['dropping_time']
+
+    experiment_data['mean_efficiency'] = (experiment_data['efficiency_forward'] + experiment_data['efficiency_backward']) /200
     
     experiment_data.dropna(how='any', subset=['dropping_speed', 'time_after', 'dropping_time', 'efficiency_forward', 'efficiency_backward'], inplace=True)
+
+    #normalize input parameters
+    experiment_data = _normalize_columns(experiment_data, BOUNDS)
+
     return experiment_data
 
-def make_prediction(data: pd.DataFrame):
-    #core Bayesian optimization implementation
+def _get_suggestion(optimizer: BayesianOptimization) -> dict[str, float]:
+    suggestion = optimizer.suggest()
+    #check constraints and get a new value if the suggestion is out of bounds along with registering a dummy bad data point at the suggested, out of bounds point
+    suggestion_denormalized = _denormalize_columns(pd.DataFrame(data=suggestion, index=range(1)), normalization_bounds=BOUNDS)
+    if (suggestion_denormalized['time_after'][0] + suggestion_denormalized['dropping_time'][0] > 45):
+        optimizer.register(params=suggestion, target=0.0)
+        logger.info(f'optimizer suggested {suggestion_denormalized.head(1)}, which is outside the constrained space. Inserted dummy point with 0.0 efficiency.')
+        #recursive call because the next suggestion could also be out of bounds
+        suggestion = _get_suggestion(optimizer)
     
-    pass
+    return suggestion
+
+def _calculate_min_distance(points: pd.DataFrame, minimum_relative_distance: float):
+    """calculates the minimum distance between each point and its nearest neighbour
+        points: dataframe of points (rows) with their dimensions (columns). Dimensions must be float or int.
+        bounds: dict with a pair of values bounding each dimension of the points. Must be named the same as the points columns.
+        minimum_relative distance: Value ranging from 0.0 to sqrt(dimensions of the points) which when undercut will cause a warning.
+    """
+     
+    minimum_distances = []
+    for index, row in points.iterrows():
+        distances = []
+        for index2, row2 in points.iterrows():
+            if index == index2:
+                #the point is being compared to itself
+                continue
+            curr_distance = 0.0
+            for column in range(row.size):
+                curr_distance += math.pow((row.iloc[column] - row2.iloc[column]), 2)
+            curr_distance = math.sqrt(curr_distance)
+            distances.append(curr_distance)
+        minimum_distances.append(min(distances))
+
+    global_min_distance = min(minimum_distances)
+    
+    if (global_min_distance < minimum_relative_distance):
+        logger.warning(f'the minimum distance calculated was {round(global_min_distance*100, 2)}%, which is below the specified minimum distance of {minimum_relative_distance*100}%')
+    else:
+        logger.info(f'minimum distance was calculated to be {round(global_min_distance*100, 2)}%')
+    return(global_min_distance)
+
+
+
+def make_prediction(data: pd.DataFrame):
+    #core Bayesian optimization implementation    
+        
+    trivial_normalized_bounds = {'dropping_time': (0, 1),'time_after': (0, 1), 'dropping_speed': (0, 1)}
+    #optimizer focused on exploitation: Mostly looks for highest improvement
+    acq_fn_exploitation = acquisition.ExpectedImprovement(xi=0.0, random_state=1)
+    optimizer_exploitation = BayesianOptimization(f=None, acquisition_function=acq_fn_exploitation, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
+    optimizer_exploitation.set_gp_params(alpha=1e-4)
+
+    #second optimizer focused on exploration
+    acq_fn_exploration = acquisition.ExpectedImprovement(xi=0.1, random_state=1)
+    optimizer_exploration = BayesianOptimization(f=None, acquisition_function=acq_fn_exploration, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
+    optimizer_exploration.set_gp_params(alpha=1e-4)
+    """for i in range(0,100):
+        sug_exploitation = optimizer_exploitation.suggest()
+        target_exploitation = dumbest_function(**sug_exploitation)
+        sug_exploration = optimizer_exploration.suggest()
+        target_exploration = dumbest_function(**sug_exploration)
+        optimizer_exploitation.register(params=sug_exploitation, target=target_exploitation)
+        optimizer_exploration.register(params=sug_exploitation, target=target_exploitation)
+        optimizer_exploitation.register(params=sug_exploration, target=target_exploration)
+        optimizer_exploration.register(params=sug_exploration, target=target_exploration)
+        print(f"suggestion exploit: {sug_exploitation}, result: {target_exploitation}")
+        print(f"suggestion explore: {sug_exploration}, result: {target_exploration}")
+        print("Both points registered.")"""
+    for index, row in data.iterrows():
+        parameters = {
+            'dropping_time': row['dropping_time'],
+            'time_after': row['time_after'],
+            'dropping_speed': row['dropping_speed']
+        }
+        target = row['mean_efficiency']
+
+        optimizer_exploitation.register(params=parameters, target=target)
+        optimizer_exploration.register(params=parameters, target=target)
+
+    suggestion_exploitation = _get_suggestion(optimizer_exploitation)
+    suggestion_exploitation['method'] = 'exploitation'
+    suggestion_exploitation_2 = _get_suggestion(optimizer_exploitation)
+    suggestion_exploitation_2['method'] = 'exploitation'
+    suggestion_exploration = _get_suggestion(optimizer_exploration)
+    suggestion_exploration['method'] = 'exploration'
+    suggestion_exploration_2 = _get_suggestion(optimizer_exploration)
+    suggestion_exploration_2['method'] = 'exploration'
+    
+    suggestions = pd.DataFrame(data=[suggestion_exploitation, suggestion_exploitation_2, suggestion_exploration, suggestion_exploration_2])
+    _calculate_min_distance(suggestions.drop(labels={'method'}, axis=1, inplace=False), 0.01)
+    suggestions = _denormalize_columns(suggestions, BOUNDS)
+    suggestions = suggestions.round(2)
+    return suggestions
