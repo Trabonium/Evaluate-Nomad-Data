@@ -1,4 +1,4 @@
-# Backlog
+# Backlog (Ctrl + Shift + V für VSCode Ansicht)
 
 
 ## Bugs
