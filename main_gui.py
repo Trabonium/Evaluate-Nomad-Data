@@ -448,7 +448,7 @@ buttons_info4 = [ #buttons für frame 3
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
     ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format."), 
-    ("Tandem Puri JV split", spilt_puri_tandem_files, "Split the tandem files to old JV format.")
+    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
 ]
 
 row_index = 1
