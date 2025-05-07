@@ -124,7 +124,7 @@ def csv_filtered_export():
         generate_csv_filtered_file(path, filtered_data, data, None)
         show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
-def filter_page_2():
+def free_filter_for_halfstacks():
     global filtered_data, data
     if data is None:
         messagebox.showerror("Error", "Please load your data first!")
@@ -142,6 +142,17 @@ def filter_page_2():
         show_auto_close_message("Success", "Data filtered!", 2000)
     except Exception as e:
         messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+
+def UVVis_plotting_function():
+    global filtered_data
+    if filtered_data is None:
+        messagebox.showerror("Error", "Please load your data first!")
+        return
+    try:
+        #UVVis_plotting(filtered_data, master=root)
+        show_auto_close_message("Success", "UVVis plotting done!", 2000)
+    except Exception as e:
+        messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
 
 def merge_UVVis_files():
     try:
@@ -426,7 +437,8 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
 #ende frame no 1
 
 buttons_info3 = [ #buttons für frame 2
-    ("Halfstack filter", filter_page_2, "Filter your data if wished (optional and repeatable).")
+    ("Halfstack filter", free_filter_for_halfstacks, "Filter your data for halfstacks if wished (optional and repeatable)."), 
+    ("UVVis plotting", None, "Plot your UVVis data with the band gaps."),
 ]
 
 row_index = 1
