@@ -17,6 +17,7 @@ from functions.Renaming_Measurements_and_Folders import Renaming_folders
 from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
+from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
 
 # Globale Variablen
 selected_file_path = None
@@ -176,6 +177,13 @@ def Rename_JV_files():
         show_auto_close_message("Success", "Back to the normal window!", 2000)
     except:
         messagebox.showerror("Error", "Something went wrong with the JV file renaming.")
+
+def spilt_puri_tandem_files():
+    try:
+        tandem_puri_jv_split(master=root)
+        show_auto_close_message("Success", "Tandem files split successfully!", 2000)
+    except Exception as e:
+        messagebox.showerror("Error", f"Something went wrong with the tandem splitting: {e}")
 
 def generate_report():
     global data, stats, directory, file_name, filtered_data, best, filter_cycle_boolean
@@ -439,7 +447,8 @@ buttons_info4 = [ #buttons für frame 3
     ("Old data renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
-    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format.")
+    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format."), 
+    ("Tandem Puri JV split", spilt_puri_tandem_files, "Split the tandem files to old JV format.")
 ]
 
 row_index = 1
