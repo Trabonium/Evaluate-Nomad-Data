@@ -19,6 +19,18 @@ from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
 
+#spinner imports
+from PIL import Image, ImageTk, ImageSequence
+import threading
+
+# Globale Variablen für Spinner
+frames = []
+done_image = None
+gif_label = None
+status_label = None
+animating = False
+current_frame_index = 0
+
 # Globale Variablen
 selected_file_path = None
 data = None
