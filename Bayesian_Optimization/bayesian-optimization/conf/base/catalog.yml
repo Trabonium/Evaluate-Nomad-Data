@@ -1,5 +1,5 @@
 experiment_ids:
-  filepath: data/01_raw/_KIT_DaBa_BO_ExPlan Testing.xlsx
+  filepath: data/01_raw/_KIT_DaBa_BO_ExPlan_V0.4.2.xlsx
   type: pandas.ExcelDataset
   load_args:
     header: 1
@@ -25,3 +25,11 @@ prediction:
   save_args:
     sep: ";"
     decimal: ","
+
+dimension_stacking_plot_1:
+  filepath: data/08_reporting/dimension_stacking_plot_exploitation.jpg
+  type: matplotlib.MatplotlibWriter
+
+dimension_stacking_plot_2:
+  filepath: data/08_reporting/dimension_stacking_plot_exploration.jpg
+  type: matplotlib.MatplotlibWriter
