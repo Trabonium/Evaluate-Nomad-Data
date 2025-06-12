@@ -11,12 +11,16 @@ from bayes_opt import BayesianOptimization, acquisition
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn
+from .util import HiddenPrints
 
 logger = logging.getLogger(__name__)
 
 #bounds suggested by Daniel
 #all input parameters must be specified here
-BOUNDS = {'dropping_time': (20, 40),'rotation_time_2': (11, 35), 'dropping_speed': (25, 1000)}
+BOUNDS = {'dropping_speed': (25, 1000),'dropping_time': (20, 40),'rotation_time_2': (11, 35)}
+
+#how many suggestions each of the 2 optimizers should produce
+NUMBER_OF_SUGGESTIONS_PER_OPT = 2
 
 def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     #get the experiment data from NOMAD db and add it to the df
@@ -174,6 +178,10 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     return experiment_ids
 
 def _normalize_columns(df: pd.DataFrame, normalization_bounds: dict):
+    """normalizes all column names corresponding to labels in normalization_bounds to (0,1)
+    df: Dataframe, must contain all column labels present in normalization_bounds
+    normalization_bounds: dict of 2 tuples indicating min and max for normalization range
+    """
     for label in normalization_bounds:
         if not df.columns.__contains__(label):
             logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
@@ -287,7 +295,7 @@ def _calculate_min_distance(points: pd.DataFrame, minimum_relative_distance: flo
 def make_prediction(data: pd.DataFrame):
     #core Bayesian optimization implementation    
         
-    trivial_normalized_bounds = {'dropping_time': (0, 1),'rotation_time_2': (0, 1), 'dropping_speed': (0, 1)}
+    trivial_normalized_bounds = {i: (0,1) for i in BOUNDS}
     #optimizer focused on exploitation: Mostly looks for highest improvement
     acq_fn_exploitation = acquisition.ExpectedImprovement(xi=0.0, random_state=1)
     optimizer_exploitation = BayesianOptimization(f=None, acquisition_function=acq_fn_exploitation, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
@@ -306,10 +314,11 @@ def make_prediction(data: pd.DataFrame):
         }
         target = row['mean_efficiency']
 
-        optimizer_exploitation.register(params=parameters, target=target)
-        optimizer_exploration.register(params=parameters, target=target)
+        #Since most points are not unique and registering non unique points produces a message, an excessive amount would be printed.
+        with HiddenPrints():
+            optimizer_exploitation.register(params=parameters, target=target)
+            optimizer_exploration.register(params=parameters, target=target)
 
-    NUMBER_OF_SUGGESTIONS_PER_OPT = 2
     suggestion_arr = []
 
     # since correct order of the values is critical, get the list of keys in the correct order from optimizer
@@ -318,6 +327,8 @@ def make_prediction(data: pd.DataFrame):
 
     for n in range(NUMBER_OF_SUGGESTIONS_PER_OPT):
         suggestion_arr.append(_get_suggestion(optimizer_exploitation))
+        
+        #build a point to probe uncertainty and predicted value at suggested point
         point = []
         for i in keys_exploitation:
             point.append(suggestion_arr[-1][i])
@@ -326,6 +337,7 @@ def make_prediction(data: pd.DataFrame):
         suggestion_arr[-1]['uncertainty'] = uncertainty[0]
         suggestion_arr[-1]['method'] = 'exploitation'
 
+        #repeat above process for exploration optimizer
         suggestion_arr.append(_get_suggestion(optimizer_exploration))
         point = []
         for i in keys_exploration:
@@ -336,7 +348,7 @@ def make_prediction(data: pd.DataFrame):
         suggestion_arr[-1]['method'] = 'exploration'
     
     suggestions = pd.DataFrame(data=suggestion_arr)
-    _calculate_min_distance(suggestions.drop(labels={'method'}, axis=1, inplace=False), 0.01)
+    _calculate_min_distance(suggestions[list(BOUNDS.keys())], 0.01)
     suggestions = _denormalize_columns(suggestions, BOUNDS)
     suggestions[list(BOUNDS.keys())] = suggestions[list(BOUNDS.keys())].round(2)
     suggestions[['predicted_value', 'uncertainty']] = suggestions[['predicted_value', 'uncertainty']].round(5)
@@ -345,13 +357,15 @@ def make_prediction(data: pd.DataFrame):
     return suggestions, optimizer_exploitation, optimizer_exploration
 
 def visualize(optimizer: BayesianOptimization):
+    #create 15 evenly spaced points between 0 and 1, then make a 15^3 grid, then back into a 1d array for prediction
     points_1d = np.linspace(0, 1, 15)
     X, Y, Z = np.meshgrid(points_1d, points_1d, points_1d, indexing='ij')
     grid_points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
+    #probe optimizer for all points
     predicted_value_array, uncertainty_array = optimizer._gp.predict(grid_points, return_std=True)
-    print(f'uncertainty min: {uncertainty_array.min()}')
-    print(f'uncertainty max: {uncertainty_array.max()}')
-    print(f'predicted value max: {predicted_value_array.max()}')
+    logger.info(f'uncertainty min: {uncertainty_array.min()}')
+    logger.info(f'uncertainty max: {uncertainty_array.max()}')
+    logger.info(f'predicted value max: {predicted_value_array.max()}')
 
     predicted_value_cube = predicted_value_array.reshape(15, 15, 15)
     uncertainty_cube = uncertainty_array.reshape(15, 15, 15)
@@ -361,16 +375,20 @@ def visualize(optimizer: BayesianOptimization):
     grid_points_cube = [f"{a[0]},{a[1]},{a[2]}" for a in grid_points]
     grid_points_cube = np.array(grid_points_cube).reshape(15,15,15)
 
+    #group values, then average out to get from a 15^3 cube to 5^3
     predicted_value_cube = predicted_value_cube.reshape(5, 3, 5, 3, 5, 3)
     uncertainty_cube = uncertainty_cube.reshape(5, 3, 5, 3, 5, 3)
-
     predicted_value_smallcube = predicted_value_cube.mean(axis=(1, 3, 5))
     uncertainty_smallcube = uncertainty_cube.mean(axis=(1, 3, 5))
-
+    
+    #backend needs to be switched since it's not running on main thread
+    plt.switch_backend('agg')
+    #create base plot grid
     fig = plt.figure(figsize=(20,12))
-    gs = mpl.gridspec.GridSpec(2,6, figure=fig, wspace=0.01, hspace=0.01)
+    gs = mpl.gridspec.GridSpec(2,6, figure=fig, wspace=0.01, hspace=0.05)
     keys = optimizer._space.keys  
 
+    #make uncertainty plots
     for z in range(5):
         ax = fig.add_subplot(gs[0, z])
         seaborn.heatmap(uncertainty_smallcube[:, :, z], ax=ax, cbar=False, cmap="mako", square=True, annot=True, annot_kws={'fontsize':'x-small'}, vmin=0.01, vmax=0.05)
@@ -381,6 +399,7 @@ def visualize(optimizer: BayesianOptimization):
         ax.set_xlabel(keys[2])
         ax.set_xticks([])
         ax.set_yticks([])
+    #make predicted value plots
     for z in range(5):
         ax = fig.add_subplot(gs[1, z])
         seaborn.heatmap(predicted_value_smallcube[:, :, z], ax=ax, cbar=False, cmap="magma", square=True, annot=True, annot_kws={'fontsize':'x-small'}, vmin=0.12, vmax=0.19)
@@ -390,6 +409,8 @@ def visualize(optimizer: BayesianOptimization):
         ax.set_xlabel(keys[2])
         ax.set_xticks([])
         ax.set_yticks([])
+    
+    #make color bars
     cmap_1 = mpl.colormaps['mako']
     norm_1 = mpl.colors.Normalize(0.01,0.05)
     ax = fig.add_subplot(gs[0,5])
