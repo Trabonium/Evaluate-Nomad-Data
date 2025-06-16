@@ -17,6 +17,19 @@ from functions.Renaming_Measurements_and_Folders import Renaming_folders
 from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
+from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
+
+#spinner imports
+from PIL import Image, ImageTk, ImageSequence, ImageOps
+import threading
+from pathlib import Path
+
+# Globale Variablen für Spinner
+frames = []
+gif_label = None
+status_label = None
+animating = False
+current_frame_index = 0
 
 # Globale Variablen
 selected_file_path = None
@@ -44,65 +57,70 @@ def show_auto_close_message(title, message, timeout=3000):
 
 # Login-Funktion
 def login_handler():
-    global token
-    username = username_entry.get()
-    password = password_entry.get()
-    if not username or not password:
-        messagebox.showerror("Error", "Please insert name and password.")
-        return
-    try:
-        response = requests.get(f"{nomad_url}/auth/token", params={"username": username, "password": password})
-        response.raise_for_status()
-        token = response.json().get('access_token', None)
-        show_auto_close_message("Login Successfully", f"Logged in as {username}", 2000)
-    except requests.exceptions.RequestException as e:
-        messagebox.showerror("Login Failed", f"Error: {e}")
+    def task_login_handler():
+        global token
+        username = username_entry.get()
+        password = password_entry.get()
+        if not username or not password:
+            messagebox.showerror("Error", "Please insert name and password.")
+            return
+        try:
+            response = requests.get(f"{nomad_url}/auth/token", params={"username": username, "password": password})
+            response.raise_for_status()
+            token = response.json().get('access_token', None)
+        except requests.exceptions.RequestException as e:
+            root.after(0, lambda : messagebox.showerror("Login Failed", f"Error: {e}"))
+    run_with_spinner(task_login_handler)
 
 # Datei auswählen
 def select_file():
-    global selected_file_path
-    selected_file_path = filedialog.askopenfilename(title="Choose Excel-file", filetypes=[("Excel-Dateien", "*.xlsx")])
-    file_path_label.config(text=f"Chosen data: {selected_file_path}" if selected_file_path else "No data chosen")
-
-# Daten laden
+    def task_select_file():
+        global selected_file_path
+        selected_file_path = filedialog.askopenfilename(title="Choose Excel-file", filetypes=[("Excel-Dateien", "*.xlsx")])
+        file_path_label.config(text=f"Chosen data: {selected_file_path}" if selected_file_path else "No data chosen")
+    run_with_spinner(task_select_file)
+    
 def load_data():
-    global data
-    if not selected_file_path:
-        messagebox.showerror("Error", "Please choose Excel first.")
-        return
-    try:
-        data = get_data_excel_to_df(selected_file_path, nomad_url, token)
-        print(data)
-        print(data.columns)
-        show_auto_close_message("Success", "Data loaded!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"Data could not be loaded: {e}")
+    def task_load_data():
+        global data
+        if not selected_file_path:
+            messagebox.showerror("Error", "Please choose Excel first.")
+            return
+        try:
+            data = get_data_excel_to_df(selected_file_path, nomad_url, token)
+            #print(data)
+            #print(data.columns)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
+    run_with_spinner(task_load_data)
 
 # Daten filtern
 def filter_data():
-    global filtered_data, data, filter_cycle_boolean
-    if data is None:
-        messagebox.showerror("Error", "Please load your data first!")
-        return
-    try:
-        filtered_data, _, filter_cycle_boolean = main_filter(data, master=root)
-        print(filtered_data)
-        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
-        show_auto_close_message("Success", "Data filtered!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+    def task_filter_data():
+        global filtered_data, data, filter_cycle_boolean
+        if data is None:
+            messagebox.showerror("Error", "Please load your data first!")
+            return
+        try:
+            filtered_data, _, filter_cycle_boolean = main_filter(data, master=root)
+            #print(filtered_data)
+            canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Filtering gone wrong: {e}"))
+    run_with_spinner(task_filter_data)
 
 # Statistiken berechnen
 def calculate_stats():
-    global stats, data, filtered_data, best
-    if data is None:
-        messagebox.showerror("Error", "Please load data first!")
-        return
-    try:
-        stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
-        show_auto_close_message("Sucess", "Statistics calculated successfully!")
-    except Exception as e:
-        messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}")
+    def task_calculate_stats():
+        global stats, data, filtered_data, best
+        if data is None:
+            messagebox.showerror("Error", "Please load data first!")
+            return
+        try:
+            stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}"))
+    run_with_spinner(task_calculate_stats)
 
 # CSV-Export-Funktionen
 def csv_raw_export():
@@ -123,7 +141,7 @@ def csv_filtered_export():
         generate_csv_filtered_file(path, filtered_data, data, None)
         show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
 
-def filter_page_2():
+def free_filter_for_halfstacks():
     global filtered_data, data
     if data is None:
         messagebox.showerror("Error", "Please load your data first!")
@@ -142,74 +160,97 @@ def filter_page_2():
     except Exception as e:
         messagebox.showerror("Error", f"Filtering gone wrong: {e}")
 
-def merge_UVVis_files():
+def UVVis_plotting_function():
+    global filtered_data
+    if filtered_data is None:
+        messagebox.showerror("Error", "Please load your data first!")
+        return
     try:
-        UVVis_merge(master=root)
-        show_auto_close_message("Success", "Back to the normal window!", 2000)
-    except:
-        messagebox.showerror("Error", "Something went wrong with the UVVis merging.")
+        #UVVis_plotting(filtered_data, master=root)
+        show_auto_close_message("Success", "UVVis plotting done!", 2000)
+    except Exception as e:
+        messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
+
+def merge_UVVis_files():
+    def task_merge_UVVis_files():
+        try:
+            UVVis_merge(master=root)
+        except:
+            root.after(0, lambda : messagebox.showerror("Error", "Something went wrong with the UVVis merging."))
+    run_with_spinner(task_merge_UVVis_files)
 
 def Rename_folders_and_measurements():
-    try:
-        Renaming_folders(master=root)
-        show_auto_close_message("Success", "Back to the normal window!", 2000)
-    except:
-        messagebox.showerror("Error", "Something went wrong with the renaming.")
+    def task_Rename_folders_and_measurements():
+        try:
+            Renaming_folders(master=root)
+        except:
+            root.after(0, lambda : messagebox.showerror("Error", "Something went wrong with the renaming."))
+    run_with_spinner(task_Rename_folders_and_measurements)
 
 def excel_creator_function():
-    try:
-        Excel_GUI(master=root)
-        show_auto_close_message("Success", "Back to the normal window!", 2000)
-    except:
-        messagebox.showerror("Error", "Something went wrong with the Excel creator.")
+    def task_excel_creator_function():
+        try:
+            Excel_GUI(master=root)
+        except:
+            root.after(0, lambda : messagebox.showerror("Error", "Something went wrong with the Excel creator."))
+    run_with_spinner(task_excel_creator_function)
 
 def EQE_Joshua():
-    try:
-        GUI_fuer_Joshuas_EQE(master=root)
-        show_auto_close_message("Success", "Back to the normal window!", 2000)
-    except:
-        messagebox.showerror("Error", "Something went wrong with the EQE plotting.")
+    def task_EQE_Joshua():
+        try:
+            GUI_fuer_Joshuas_EQE(master=root)
+        except:
+            root.after(0, lambda : messagebox.showerror("Error", "Something went wrong with the EQE plotting."))
+    run_with_spinner(task_EQE_Joshua)
 
 def Rename_JV_files():
-    try:
-        measurement_file_organizer(master=root)
-        show_auto_close_message("Success", "Back to the normal window!", 2000)
-    except:
-        messagebox.showerror("Error", "Something went wrong with the JV file renaming.")
+    def task_Rename_JV_files():
+        try:
+            measurement_file_organizer(master=root)
+        except:
+            root.after(0, lambda : messagebox.showerror("Error", "Something went wrong with the JV file renaming."))
+    run_with_spinner(task_Rename_JV_files)
+
+def spilt_puri_tandem_files():
+    def task_spilt_puri_tandem_files():
+        try:
+            tandem_puri_jv_split(master=root)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Something went wrong with the tandem splitting: {e}"))
+    run_with_spinner(task_spilt_puri_tandem_files)
 
 def generate_report():
-    global data, stats, directory, file_name, filtered_data, best, filter_cycle_boolean
+    def task_generate_report():
+        global data, stats, directory, file_name, filtered_data, best, filter_cycle_boolean
 
-    if data is None or stats is None:
-        messagebox.showerror("Error", "Please load data and calculate statistics first.")
-        return
+        if data is None or stats is None:
+            root.after(0, lambda : messagebox.showerror("Error", "Please load data and calculate statistics first."))
+            return
 
-    # Hier wird `selected_plots` aus den Checkbox-Variablen aktualisiert
-    selected_plots_uebergeben = {
-        "JV": jv_var.get(),
-        "Box+Scatter": box_var.get(),
-        "SeparateScan": separate_scan_var.get(), 
-        "Hysteresis": hysteresis.get(),
-        "EQE": eqe_var.get(),
-        "MPP": mpp_var.get(),
-        "Table": table_var.get(), 
-        "Picture": picture_var.get(),
-    }
+        # Hier wird `selected_plots` aus den Checkbox-Variablen aktualisiert
+        selected_plots_uebergeben = {
+            "JV": jv_var.get(),
+            "Box+Scatter": box_var.get(),
+            "SeparateScan": separate_scan_var.get(), 
+            "Hysteresis": hysteresis.get(),
+            "EQE": eqe_var.get(),
+            "MPP": mpp_var.get(),
+            "Table": table_var.get(), 
+            "Picture": picture_var.get(),
+        }
 
-    file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
-    if not file_path:
-        return
+        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+        if not file_path:
+            return
 
-    try:
-        directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token, filter_cycle_boolean)
-        show_auto_close_message("Success", f"PDF report with filtered data saved to: {file_path}", 2000)
-    except:
         try:
-            directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token,filter_cycle_boolean)
-            show_auto_close_message("Success", f"PDF report with raw data saved to: {file_path}", 2000)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
-
+            directory, file_name = generate_pdf_report(filtered_data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token, filter_cycle_boolean)
+        except:
+            try:
+                directory, file_name = generate_pdf_report(data, stats, best, selected_plots_uebergeben, file_path, nomad_url, token,filter_cycle_boolean)
+            except Exception as e:
+                root.after(0, lambda : messagebox.showerror("Error", f"Failed to generate report: {e}"))
+    run_with_spinner(task_generate_report)
 
 # Funktion für Hover-Effekt für Buttons und Checkbuttons
 def apply_hover_effect(widget, normal_style, hover_style):
@@ -256,6 +297,64 @@ root.title("Script for NOMAD data evaluation")
 root.geometry("600x600")
 #root.iconbitmap(os.path.join(os.path.dirname(__file__), "GUI.ico"))
 
+# Spinner functions
+# get the spinner
+def resource_path(relative_path):
+    """Gibt den Pfad zur Datei zurück – kompatibel mit .exe (PyInstaller)."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path) #in case of .exe
+    return os.path.join(os.path.abspath("."), relative_path) #in case of programming mode
+
+def init_spinner_ui(master):
+    global gif_label, status_label, frames
+
+    TARGET_SIZE = (100, 100)
+
+    try:
+        gif_path = resource_path("giffolder/spinner.gif")
+        gif = Image.open(gif_path)
+        frames.clear()  # falls neu initialisiert
+
+        for frame in ImageSequence.Iterator(gif):
+            frame_resized = frame.copy().convert("RGBA").resize(TARGET_SIZE, Image.LANCZOS)
+            frames.append(ImageTk.PhotoImage(frame_resized))
+
+        gif_label.config(image=frames[0])
+    except Exception as e:
+        print("Fehler beim Laden von spinner.gif:", e)
+
+# === Spinner-Steuerung ===
+def show_spinner():
+    global animating
+    animating = True
+    status_label.config(text="Working...", style="StatusWorking.TLabel")
+    update_spinner_frame(current_frame_index)  # ✅ Starte dort, wo zuletzt aufgehört
+
+def update_spinner_frame(idx):
+    global current_frame_index
+    if not animating or not frames:
+        return
+    gif_label.config(image=frames[idx])
+    gif_label.image = frames[idx]  # Referenz halten
+    current_frame_index = idx      # 🧠 Merke den aktuellen Frame
+    root.after(100, update_spinner_frame, (idx + 1) % len(frames))
+
+def hide_spinner():
+    global animating
+    animating = False
+    status_label.config(text="Done", style="StatusReady.TLabel")
+
+# === Wrapper-Funktion für lange Aufgaben ===
+def run_with_spinner(task_function):
+    def task():
+        try:
+            task_function()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+        finally:
+            root.after(0, hide_spinner)
+    show_spinner()
+    threading.Thread(target=task, daemon=True).start()
 
 # Styling mit ttk
 style = ttk.Style()
@@ -263,6 +362,9 @@ style.configure("TButton", font=("Arial", 10), padding=5)
 style.configure("Hover.TButton", background="lightblue")
 style.configure("TCheckbutton", font=("Arial", 10))
 style.configure("Hover.TCheckbutton", background="lightgray")
+style.configure("StatusReady.TLabel", foreground="green")
+style.configure("StatusWorking.TLabel", foreground="orange")
+
 
 # Haupt-Frame mit Scroll-Funktion
 main_frame = tk.Frame(root)
@@ -339,6 +441,17 @@ for text, command, tooltip in buttons_info1:
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
 file_path_label.grid(row=5, column=0, pady=5)
 
+#spinner positioning
+spinner_frame = ttk.Frame(scrollable_frame)
+spinner_frame.grid(row=7, column=0, columnspan=2, pady=(5, 5), sticky="ew")
+status_label = ttk.Label(spinner_frame, text="Ready", style="StatusReady.TLabel", anchor="center")
+status_label.pack()
+gif_label = ttk.Label(spinner_frame)
+gif_label.pack()
+
+init_spinner_ui(spinner_frame)
+
+
 notebook = ttk.Notebook(scrollable_frame)
 frame1 = ttk.Frame(notebook)
 frame2 = ttk.Frame(notebook)
@@ -351,7 +464,7 @@ for frame in [frame1, frame2, frame3]:
 notebook.add(frame1, text="solar cell data evaluation")
 notebook.add(frame2, text="halfstack data evaluation")
 notebook.add(frame3, text="tools")
-notebook.grid(row=7, column=0, columnspan=2, pady=10, sticky="ew")
+notebook.grid(row=8, column=0, columnspan=2, pady=10, sticky="ew")
 
 
 buttons_info2 = [ #buttons für das erste notebook
@@ -362,7 +475,7 @@ buttons_info2 = [ #buttons für das erste notebook
     ("Generate Report", generate_report, "Export your report with your wished plots and informations (optional and repeatable).")
 ]
 
-row_index = 8
+row_index = 9
 for text, command, tooltip in buttons_info2:
     btn = ttk.Button(frame1, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
@@ -377,13 +490,13 @@ for text, command, tooltip in buttons_info2:
 
 
 toggle_button = tk.Button(frame1, text="▶ Show Plot Options", command=toggle_plot_options)
-toggle_button.grid(row=13, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
+toggle_button.grid(row=14, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
 
 apply_hover_effect(toggle_button, "TButton", "Hover.TButton")
 
 # Frame für Checkboxen (zunächst versteckt)
 plot_options_frame = tk.Frame(frame1)
-plot_options_frame.grid(row=14, column=0, pady=5, sticky="n")
+plot_options_frame.grid(row=15, column=0, pady=5, sticky="n")
 plot_options_frame.grid_remove()
 
 # Checkbox-Variablen für Plots
@@ -418,7 +531,8 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
 #ende frame no 1
 
 buttons_info3 = [ #buttons für frame 2
-    ("Halfstack filter", filter_page_2, "Filter your data if wished (optional and repeatable).")
+    ("Halfstack filter", free_filter_for_halfstacks, "Filter your data for halfstacks if wished (optional and repeatable)."), 
+    ("UVVis plotting", None, "Plot your UVVis data with the band gaps."),
 ]
 
 row_index = 1
@@ -439,7 +553,8 @@ buttons_info4 = [ #buttons für frame 3
     ("Old data renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
-    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format.")
+    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format."), 
+    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
 ]
 
 row_index = 1

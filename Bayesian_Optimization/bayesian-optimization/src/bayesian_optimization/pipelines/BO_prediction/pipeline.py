@@ -19,8 +19,20 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=make_prediction,
                 inputs="preprocessed_data",
-                outputs="prediction",
+                outputs=["prediction", "optimizer_1", "optimizer_2"],
                 name="make_prediction"
+            ),
+            node(
+                func=visualize,
+                inputs="optimizer_1",
+                outputs="dimension_stacking_plot_1",
+                name="visualize_exploitation_opt"
+            ),
+            node(
+                func=visualize,
+                inputs="optimizer_2",
+                outputs="dimension_stacking_plot_2",
+                name="visualize_exploration_opt"
             )
         ]
     )

@@ -1,12 +1,26 @@
 import pandas as pd
-import os, sys, requests
+import numpy as np
+import os, sys, requests, logging, math
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "..")))
 
 from kedro.config import OmegaConfigLoader
 from kedro.framework.project import settings
 from pathlib import Path
-from functions.api_calls_get_data import get_entryid
+from bayes_opt import BayesianOptimization, acquisition
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import seaborn
+from .util import HiddenPrints
+
+logger = logging.getLogger(__name__)
+
+#bounds suggested by Daniel
+#all input parameters must be specified here
+BOUNDS = {'dropping_speed': (25, 1000),'dropping_time': (20, 40),'rotation_time_2': (11, 35)}
+
+#how many suggestions each of the 2 optimizers should produce
+NUMBER_OF_SUGGESTIONS_PER_OPT = 2
 
 def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     #get the experiment data from NOMAD db and add it to the df
@@ -148,19 +162,42 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
                 entry_name, pixel = entry['archive']['data']['name'].split()
                 efficiency_backward = entry['archive']['data']['jv_curve'][0]['efficiency']
                 efficiency_forward = entry['archive']['data']['jv_curve'][1]['efficiency']
-                efficiencies.append([entry_name, pixel, efficiency_backward, efficiency_forward])
+                jsc_backward = entry['archive']['data']['jv_curve'][0]['short_circuit_current_density']
+                jsc_forward = entry['archive']['data']['jv_curve'][1]['short_circuit_current_density']
+                efficiencies.append([entry_name, pixel, efficiency_backward, efficiency_forward, jsc_backward, jsc_forward])
             except KeyError:
                 #one of the data points is missing, so instead of initializing it as None and dropping it later, it is skipped here
                 continue
         
         next_page = response['pagination'].get('next_page_after_value')
     
-    pixel_data = pd.DataFrame(data=efficiencies, columns=['entry_name', 'pixel', 'efficiency_backward', 'efficiency_forward'])
+    pixel_data = pd.DataFrame(data=efficiencies, columns=['entry_name', 'pixel', 'efficiency_backward', 'efficiency_forward', 'jsc_backward', 'jsc_forward'])
     experiment_ids = experiment_ids.join(pixel_data.set_index('entry_name'), on='entry_name', validate='1:m')
     experiment_ids = experiment_ids.reset_index()
 
     return experiment_ids
 
+def _normalize_columns(df: pd.DataFrame, normalization_bounds: dict):
+    """normalizes all column names corresponding to labels in normalization_bounds to (0,1)
+    df: Dataframe, must contain all column labels present in normalization_bounds
+    normalization_bounds: dict of 2 tuples indicating min and max for normalization range
+    """
+    for label in normalization_bounds:
+        if not df.columns.__contains__(label):
+            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
+            return df
+        df[label] = (df[label] - normalization_bounds[label][0]) / (normalization_bounds[label][1] - normalization_bounds[label][0])
+
+    return df
+
+def _denormalize_columns(df: pd.DataFrame, normalization_bounds: dict):
+    for label in normalization_bounds:
+        if not df.columns.__contains__(label):
+            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
+            return df
+        df[label] = (df[label] * (normalization_bounds[label][1] - normalization_bounds[label][0])) + normalization_bounds[label][0]
+    
+    return df
 
 def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     #convert data types, clean data and create new columns that are entirely predecated on existing columns
@@ -169,16 +206,220 @@ def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     
     #convert column types into more fitting ones
     experiment_data['Date'] = experiment_data['Date'].apply(lambda x: pd.to_datetime(x, format='%Y%m%d'))
-    experiment_data = experiment_data.astype(dtype={'Sample': int, 'Subbatch': int})
 
 
     rotation_time_before = 10
     experiment_data['time_after'] = rotation_time_before + experiment_data['rotation_time_2'] - experiment_data['dropping_time']
+
+    experiment_data['mean_efficiency'] = (experiment_data['efficiency_forward'] + experiment_data['efficiency_backward']) /200
+    experiment_data['mean_jsc'] = (experiment_data['jsc_forward'] + experiment_data['jsc_backward']) /2
     
     experiment_data.dropna(how='any', subset=['dropping_speed', 'time_after', 'dropping_time', 'efficiency_forward', 'efficiency_backward'], inplace=True)
+
+    #fake data for testing purposes
+    """experiment_data = pd.concat([experiment_data, 
+                                pd.DataFrame({'Date': [None]*8,
+                                 'Project_Name': ['DaBa']*8,
+                                 'Subbatch': [42]*8,
+                                 'Sample': [5]*8,
+                                 'entry_name': ['fake']*8,
+                                 'Variation': [42]*8,
+                                 'dropping_speed': [51.52]*4+[30.01]*4,
+                                 'entry_id': [None]*8,
+                                 'rotation_time_2': [0.0]*8,
+                                 'dropping_time': [20.2]*4+[20.15]*4,
+                                 'pixel': [None]*8,
+                                 'efficiency_backward': [0.0]*8,
+                                 'efficiency_forward': [0.0]*8,
+                                 'time_after': [9.22]*4+[9.69]*4,
+                                 'mean_efficiency': [0.099,0.1,0.1,0.102,0.108,0.11,0.11,0.111]})]
+                                 , ignore_index=True)"""
+    #normalize input parameters
+    experiment_data = _normalize_columns(experiment_data, BOUNDS)
+
+    #remove parts of the data for testing purposes
+    FACTOR_TO_KEEP = 1.0
+    if (FACTOR_TO_KEEP<1):
+        rowcount = len(experiment_data)
+        experiment_data = experiment_data.head(int(rowcount*FACTOR_TO_KEEP))
+
+    experiment_data
+
     return experiment_data
 
-def make_prediction(data: pd.DataFrame):
-    #core Bayesian optimization implementation
+def _get_suggestion(optimizer: BayesianOptimization) -> dict[str, float]:
+    suggestion = optimizer.suggest()
+    #check constraints and get a new value if the suggestion is out of bounds along with registering a dummy bad data point at the suggested, out of bounds point
+    suggestion_denormalized = _denormalize_columns(pd.DataFrame(data=suggestion, index=range(1)), normalization_bounds=BOUNDS)
+    if ((suggestion_denormalized['rotation_time_2'][0] + 10) < suggestion_denormalized['dropping_time'][0]):
+        optimizer.register(params=suggestion, target=0.0)
+        suggestion_string = ""
+        for c in suggestion_denormalized.columns: suggestion_string += c + "=" + str(suggestion_denormalized[c][0]) + "; "
+        logger.info(f'optimizer suggested {suggestion_string}which is outside the constrained space. Inserted dummy point with 0.0 efficiency.')
+        #recursive call because the next suggestion could also be out of bounds
+        suggestion = _get_suggestion(optimizer)
     
-    pass
+    return suggestion
+
+def _calculate_min_distance(points: pd.DataFrame, minimum_relative_distance: float):
+    """calculates the minimum distance between each point and its nearest neighbour
+        points: dataframe of points (rows) with their dimensions (columns). Dimensions must be float or int.
+        bounds: dict with a pair of values bounding each dimension of the points. Must be named the same as the points columns.
+        minimum_relative distance: Value ranging from 0.0 to sqrt(dimensions of the points) which when undercut will cause a warning.
+    """
+     
+    minimum_distances = []
+    for index, row in points.iterrows():
+        distances = []
+        for index2, row2 in points.iterrows():
+            if index == index2:
+                #the point is being compared to itself
+                continue
+            curr_distance = 0.0
+            for column in range(row.size):
+                curr_distance += math.pow((row.iloc[column] - row2.iloc[column]), 2)
+            curr_distance = math.sqrt(curr_distance)
+            distances.append(curr_distance)
+        minimum_distances.append(min(distances))
+
+    global_min_distance = min(minimum_distances)
+    
+    if (global_min_distance < minimum_relative_distance):
+        logger.warning(f'the minimum distance calculated was {round(global_min_distance*100, 2)}%, which is below the specified minimum distance of {minimum_relative_distance*100}%')
+    else:
+        logger.info(f'minimum distance was calculated to be {round(global_min_distance*100, 2)}%')
+    return(global_min_distance)
+
+
+
+def make_prediction(data: pd.DataFrame):
+    #core Bayesian optimization implementation    
+        
+    trivial_normalized_bounds = {i: (0,1) for i in BOUNDS}
+    #optimizer focused on exploitation: Mostly looks for highest improvement
+    acq_fn_exploitation = acquisition.ExpectedImprovement(xi=0.0, random_state=1)
+    optimizer_exploitation = BayesianOptimization(f=None, acquisition_function=acq_fn_exploitation, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
+    optimizer_exploitation.set_gp_params(alpha=1e-4)
+
+    #second optimizer focused on exploration
+    acq_fn_exploration = acquisition.ExpectedImprovement(xi=0.1, random_state=1)
+    optimizer_exploration = BayesianOptimization(f=None, acquisition_function=acq_fn_exploration, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
+    optimizer_exploration.set_gp_params(alpha=1e-4)
+    
+    for index, row in data.iterrows():
+        parameters = {
+            'dropping_time': row['dropping_time'],
+            'rotation_time_2': row['rotation_time_2'],
+            'dropping_speed': row['dropping_speed']
+        }
+        target = row['mean_efficiency']
+
+        #Since most points are not unique and registering non unique points produces a message, an excessive amount would be printed.
+        with HiddenPrints():
+            optimizer_exploitation.register(params=parameters, target=target)
+            optimizer_exploration.register(params=parameters, target=target)
+
+    suggestion_arr = []
+
+    # since correct order of the values is critical, get the list of keys in the correct order from optimizer
+    keys_exploitation = optimizer_exploitation._space.keys
+    keys_exploration = optimizer_exploration._space.keys
+
+    for n in range(NUMBER_OF_SUGGESTIONS_PER_OPT):
+        suggestion_arr.append(_get_suggestion(optimizer_exploitation))
+        
+        #build a point to probe uncertainty and predicted value at suggested point
+        point = []
+        for i in keys_exploitation:
+            point.append(suggestion_arr[-1][i])
+        predicted_value, uncertainty = optimizer_exploitation._gp.predict([point], return_std=True)
+        suggestion_arr[-1]['predicted_value'] = predicted_value[0]
+        suggestion_arr[-1]['uncertainty'] = uncertainty[0]
+        suggestion_arr[-1]['method'] = 'exploitation'
+
+        #repeat above process for exploration optimizer
+        suggestion_arr.append(_get_suggestion(optimizer_exploration))
+        point = []
+        for i in keys_exploration:
+            point.append(suggestion_arr[-1][i])
+        predicted_value, uncertainty = optimizer_exploration._gp.predict([point], return_std=True)
+        suggestion_arr[-1]['predicted_value'] = predicted_value[0]
+        suggestion_arr[-1]['uncertainty'] = uncertainty[0]
+        suggestion_arr[-1]['method'] = 'exploration'
+    
+    suggestions = pd.DataFrame(data=suggestion_arr)
+    _calculate_min_distance(suggestions[list(BOUNDS.keys())], 0.01)
+    suggestions = _denormalize_columns(suggestions, BOUNDS)
+    suggestions[list(BOUNDS.keys())] = suggestions[list(BOUNDS.keys())].round(2)
+    suggestions[['predicted_value', 'uncertainty']] = suggestions[['predicted_value', 'uncertainty']].round(5)
+    suggestions.sort_values(by='method', inplace=True, kind='stable')
+
+    return suggestions, optimizer_exploitation, optimizer_exploration
+
+def visualize(optimizer: BayesianOptimization):
+    #create 15 evenly spaced points between 0 and 1, then make a 15^3 grid, then back into a 1d array for prediction
+    points_1d = np.linspace(0, 1, 15)
+    X, Y, Z = np.meshgrid(points_1d, points_1d, points_1d, indexing='ij')
+    grid_points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
+    #probe optimizer for all points
+    predicted_value_array, uncertainty_array = optimizer._gp.predict(grid_points, return_std=True)
+    logger.info(f'uncertainty min: {uncertainty_array.min()}')
+    logger.info(f'uncertainty max: {uncertainty_array.max()}')
+    logger.info(f'predicted value max: {predicted_value_array.max()}')
+
+    predicted_value_cube = predicted_value_array.reshape(15, 15, 15)
+    uncertainty_cube = uncertainty_array.reshape(15, 15, 15)
+    
+    #just to check the transformation is done correctly
+    grid_points = grid_points.round(2)
+    grid_points_cube = [f"{a[0]},{a[1]},{a[2]}" for a in grid_points]
+    grid_points_cube = np.array(grid_points_cube).reshape(15,15,15)
+
+    #group values, then average out to get from a 15^3 cube to 5^3
+    predicted_value_cube = predicted_value_cube.reshape(5, 3, 5, 3, 5, 3)
+    uncertainty_cube = uncertainty_cube.reshape(5, 3, 5, 3, 5, 3)
+    predicted_value_smallcube = predicted_value_cube.mean(axis=(1, 3, 5))
+    uncertainty_smallcube = uncertainty_cube.mean(axis=(1, 3, 5))
+    
+    #backend needs to be switched since it's not running on main thread
+    plt.switch_backend('agg')
+    #create base plot grid
+    fig = plt.figure(figsize=(20,12))
+    gs = mpl.gridspec.GridSpec(2,6, figure=fig, wspace=0.01, hspace=0.05)
+    keys = optimizer._space.keys  
+
+    #make uncertainty plots
+    for z in range(5):
+        ax = fig.add_subplot(gs[0, z])
+        seaborn.heatmap(uncertainty_smallcube[:, :, z], ax=ax, cbar=False, cmap="mako", square=True, annot=True, annot_kws={'fontsize':'x-small'}, vmin=0.01, vmax=0.05)
+        feature = BOUNDS[keys[0]]
+        ax.set_title(f'{keys[0]} {int(feature[0]+(feature[1]-feature[0])*(z/5))} to {int(feature[0]+(feature[1]-feature[0])*((z+1)/5))}')
+        if(z==0):
+            ax.set_ylabel(keys[1])
+        ax.set_xlabel(keys[2])
+        ax.set_xticks([])
+        ax.set_yticks([])
+    #make predicted value plots
+    for z in range(5):
+        ax = fig.add_subplot(gs[1, z])
+        seaborn.heatmap(predicted_value_smallcube[:, :, z], ax=ax, cbar=False, cmap="magma", square=True, annot=True, annot_kws={'fontsize':'x-small'}, vmin=0.12, vmax=0.19)
+        ax.set_title(f'{keys[0]} {int(feature[0]+(feature[1]-feature[0])*(z/5))} to {int(feature[0]+(feature[1]-feature[0])*((z+1)/5))}')
+        if(z==0):
+            ax.set_ylabel(keys[1])
+        ax.set_xlabel(keys[2])
+        ax.set_xticks([])
+        ax.set_yticks([])
+    
+    #make color bars
+    cmap_1 = mpl.colormaps['mako']
+    norm_1 = mpl.colors.Normalize(0.01,0.05)
+    ax = fig.add_subplot(gs[0,5])
+    cbar_1 = fig.colorbar(mpl.cm.ScalarMappable(norm_1, cmap_1), ax, use_gridspec=True, aspect=0.5)
+
+    cmap_2 = mpl.colormaps['magma']
+    norm_2 = mpl.colors.Normalize(0.12,0.19)
+    ax = fig.add_subplot(gs[1,5])
+    cbar_2 = fig.colorbar(mpl.cm.ScalarMappable(norm_2, cmap_2), ax, use_gridspec=True, aspect=0.5)
+
+    plt.tight_layout()
+    return fig

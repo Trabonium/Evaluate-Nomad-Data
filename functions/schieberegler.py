@@ -280,7 +280,7 @@ def main_filter(df_default_werte, master):
     filter_window.grab_set(),
     filter_window.wait_window()
 
-    print("jetzt richtig?: ", cycle_optimizing)
+    #print("jetzt richtig?: ", cycle_optimizing)
 
     #filtergrößen:
     min_pce = df_min_max_self[df_min_max_self["Parameter"] == "PCE"]["Min"].values[0]

@@ -1,10 +1,14 @@
+import matplotlib
+matplotlib.use("Agg")
+'''
+makes it impossible to use matplotlib GUI here (eg show()) but otherwise we get problems with the side thread
+'''
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 import math
 from functions.api_calls_get_data import get_specific_data_of_sample
-#import seaborn as sns #for the old box and scatter plot
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
