@@ -3,8 +3,10 @@ from tkinter import ttk, filedialog, messagebox
 import requests
 import pandas as pd 
 import os, sys
-from kedro.config import OmegaConfigLoader
-from kedro.framework.project import settings
+
+if not getattr(sys, 'frozen', False):  # nur im Entwicklungskontext
+    from kedro.config import OmegaConfigLoader
+    from kedro.framework.project import settings
 
 from functions.get_data import get_data_excel_to_df
 from functions.calculate_statistics import calculate_statistics
@@ -572,12 +574,16 @@ for text, command, tooltip in buttons_info4:
 
 #load credentials from credentials.yml in kedro conf
 #if you are unsure how to use this, read the top-level readme in Bayesian_Optimization
-path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\Bayesian_Optimization\\bayesian-optimization\\conf"
-conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
-credentials = conf_loader["credentials"]
-if credentials.__contains__('nomad_db'):
-    username_entry.insert(0,credentials['nomad_db']['username'])
-    password_entry.insert(0,credentials['nomad_db']['password'])
-    show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
+if not getattr(sys, 'frozen', False):  # nur im Entwicklermodus
+    try:
+        path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\Bayesian_Optimization\\bayesian-optimization\\conf"
+        conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
+        credentials = conf_loader["credentials"]
+        if 'nomad_db' in credentials:
+            username_entry.insert(0, credentials['nomad_db']['username'])
+            password_entry.insert(0, credentials['nomad_db']['password'])
+            show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
+    except Exception as e:
+        print(f"Credentials konnten nicht geladen werden: {e}")
 
 root.mainloop()
