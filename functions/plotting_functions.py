@@ -367,7 +367,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
 
                 
             else:
-                for k, cyclegroup in enumerate(sorted(df['Cycle#'].unique())):
+                for k, cyclegroup in enumerate(sorted(df['Cycle#'].dropna().unique())):
                     alpha = 0.9 - k / len(df['Cycle#'].unique())
                     # Overlay the scatter plot with black points
                     for j, group in enumerate(sorted_groups):
