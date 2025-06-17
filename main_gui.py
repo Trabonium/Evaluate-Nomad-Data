@@ -582,7 +582,7 @@ if not getattr(sys, 'frozen', False):  #only import in development environment
         if 'nomad_db' in credentials:
             username_entry.insert(0, credentials['nomad_db']['username'])
             password_entry.insert(0, credentials['nomad_db']['password'])
-            show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
+            #show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
     except Exception as e:
         print(f"Credentials konnten nicht geladen werden: {e}")
 
