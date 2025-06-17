@@ -4,7 +4,7 @@ import requests
 import pandas as pd 
 import os, sys
 
-if not getattr(sys, 'frozen', False):  # nur im Entwicklungskontext
+if not getattr(sys, 'frozen', False):  #only import in development environment
     from kedro.config import OmegaConfigLoader
     from kedro.framework.project import settings
 
@@ -574,7 +574,7 @@ for text, command, tooltip in buttons_info4:
 
 #load credentials from credentials.yml in kedro conf
 #if you are unsure how to use this, read the top-level readme in Bayesian_Optimization
-if not getattr(sys, 'frozen', False):  # nur im Entwicklermodus
+if not getattr(sys, 'frozen', False):  #only import in development environment
     try:
         path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\Bayesian_Optimization\\bayesian-optimization\\conf"
         conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
