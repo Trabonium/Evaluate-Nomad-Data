@@ -91,7 +91,7 @@ def load_data():
         try:
             data = get_data_excel_to_df(selected_file_path, nomad_url, token)
             #print(data)
-            #print(data.columns)
+            #print(data['variation'].unique().tolist())
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
     run_with_spinner(task_load_data)
