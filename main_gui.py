@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from tkinterdnd2 import DND_FILES, TkinterDnD #drag and drop window
 import requests
 import pandas as pd 
 import os, sys
@@ -81,6 +82,17 @@ def select_file():
         selected_file_path = filedialog.askopenfilename(title="Choose Excel-file", filetypes=[("Excel-Dateien", "*.xlsx")])
         file_path_label.config(text=f"Chosen data: {selected_file_path}" if selected_file_path else "No data chosen")
     run_with_spinner(task_select_file)
+
+#drag and drop select file function
+def handle_drop(event):
+    global selected_file_path
+    path = event.data.strip('{}')  # Bei Leerzeichen im Pfad
+    if path.endswith('.xlsx'):
+        selected_file_path = path
+        file_path_label.config(text=f"Chosen data: {selected_file_path}")
+    else:
+        file_path_label.config(text="❌ Not an Excel file!")
+
     
 def load_data():
     def task_load_data():
@@ -294,7 +306,7 @@ def toggle_plot_options():
 
 
 # Hauptfenster erstellen
-root = tk.Tk()
+root = TkinterDnD.Tk()
 root.title("Script for NOMAD data evaluation")
 root.geometry("600x600")
 #root.iconbitmap(os.path.join(os.path.dirname(__file__), "GUI.ico"))
@@ -420,14 +432,13 @@ password_help.bind("<Leave>", hide_tooltip)
 # Buttons mit tatsächlichen Funktionsaufrufen
 buttons_info1 = [ #buttons für die kopfzeile
     ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
-    ("Select File", select_file, "Choose Excel file to download your wanted data. If you need data from multiple batches, merge your experimental Planning excel files - but DO NOT UPLOAD TO NOMAD TWICE!"),
     ("Load corresponding Data from NOMAD OASIS", load_data, "Download data with the choosen Excel file.")
 ]
 
 row_index = 3
 for text, command, tooltip in buttons_info1:
-    if row_index == 5:
-        row_index += 1
+    if row_index == 4:
+        row_index += 2
     btn = ttk.Button(scrollable_frame, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
     apply_hover_effect(btn, "TButton", "Hover.TButton")
@@ -438,6 +449,32 @@ for text, command, tooltip in buttons_info1:
     help_label.bind("<Leave>", hide_tooltip)
     
     row_index += 1
+
+# Zeile im Grid für Button + Dropfeld
+row_index = 4  # z. B. anpassen, je nachdem wo du bist
+
+# Frame für Button + Drag-Drop
+file_frame = ttk.Frame(scrollable_frame)
+file_frame.grid(row=4, column=0, columnspan=2, pady=5, sticky="n")
+
+# Button
+select_button = ttk.Button(file_frame, text="Select File", command=select_file)
+select_button.grid(row=0, column=0, padx=(0, 10))
+
+drop_label = ttk.Label(file_frame, text="⬇️ Drag & Drop Excel file", relief="ridge", padding=5)
+drop_label.grid(row=0, column=1)
+
+apply_hover_effect(select_button, "TButton", "Hover.TButton")
+
+# Drop-Ziel registrieren
+drop_label.drop_target_register(DND_FILES)
+drop_label.dnd_bind('<<Drop>>', handle_drop)
+
+# Hilfe-Icon separat rechts
+file_help = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
+file_help.grid(row=row_index, column=1, padx=5)
+file_help.bind("<Enter>", lambda e: show_tooltip(e, "Choose Excel file or drag it here."))
+file_help.bind("<Leave>", hide_tooltip)
 
 
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
