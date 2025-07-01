@@ -301,7 +301,7 @@ def toggle_plot_options():
         plot_options_frame.grid_remove()  # Nur das Frame verstecken
         toggle_button.config(text="▶ Show Plot Options")  # Button bleibt sichtbar
     else:
-        plot_options_frame.grid(row=14, column=0, pady=5, sticky="n")  # Wieder anzeigen
+        plot_options_frame.grid(row=15, column=0, pady=5, sticky="n")  # Wieder anzeigen
         toggle_button.config(text="▼ Hide Plot Options")
 
 
