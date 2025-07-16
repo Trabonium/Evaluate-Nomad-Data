@@ -21,6 +21,7 @@ from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
+from functions.UVVis_plotting import UVVis_plotting  
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
@@ -37,6 +38,7 @@ current_frame_index = 0
 # Globale Variablen
 selected_file_path = None
 data = None
+filtered_data = None
 stats = None
 best = None
 token = None
@@ -138,52 +140,72 @@ def calculate_stats():
 
 # CSV-Export-Funktionen
 def csv_raw_export():
-    if data is None:
-        messagebox.showerror("Error", "Please load data first!")
-        return
-    path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
-    if path:
-        generate_csv_raw_file(path, data)
-        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
+    def task_csv_raw_export():
+        if data is None:
+            messagebox.showerror("Error", "Please load data first!")
+            return
+        else:
+            path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+            if path:
+                generate_csv_raw_file(path, data)
+    run_with_spinner(task_csv_raw_export)
 
 def csv_filtered_export():
-    if 'filtered_data' not in globals():
-        messagebox.showerror("Error", "Please filter data first!")
-        return
-    path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
-    if path:
-        generate_csv_filtered_file(path, filtered_data, data, None)
-        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
+    def task_csv_filtered_export():
+        if filtered_data is None:
+            messagebox.showerror("Error", "Please filter data first!")
+            return
+        else:
+            path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+            if path:
+                generate_csv_filtered_file(path, filtered_data, data, None)
+    run_with_spinner(task_csv_filtered_export)
 
 def free_filter_for_halfstacks():
-    global filtered_data, data
-    if data is None:
-        messagebox.showerror("Error", "Please load your data first!")
-        return
-    try:
-        filtered_data = freier_filter(data, master=root)
+    def task_free_filter_for_halfstacks():
+        global filtered_data, data
+        if data is None:
+            messagebox.showerror("Error", "Please load your data first!")
+            return
+        try:
+            filtered_data = freier_filter(data, master=root)
 
-        #ausgabe der gefilterten daten
-        #common_cols = list(data.columns.intersection(filtered_data.columns))
-        #df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
-        #df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
-        #print(df_A_only)
+            #ausgabe der gefilterten daten
+            #common_cols = list(data.columns.intersection(filtered_data.columns))
+            #df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
+            #df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
+            #print(df_A_only)
 
-        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
-        show_auto_close_message("Success", "Data filtered!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+            canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
+        except Exception as e:
+            messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+    run_with_spinner(task_free_filter_for_halfstacks)
 
 def UVVis_plotting_function():
-    global filtered_data
-    if filtered_data is None:
-        messagebox.showerror("Error", "Please load your data first!")
-        return
-    try:
-        #UVVis_plotting(filtered_data, master=root)
-        show_auto_close_message("Success", "UVVis plotting done!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
+    def task_UVVis_plotting_function():
+        global filtered_data, data, nomad_url, token
+        #check if data is loaded
+        if data is None:
+            messagebox.showerror("Error", "Please load your data first!")
+            return
+        #get place to save the plot
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png")]
+        )
+        #check if user has chosen a file
+        if not file_path:
+            return
+
+        #data_to_plot = data if filtered_data is None else filtered_data
+        data_to_plot = filtered_data if filtered_data is not None else data
+
+        try:
+            UVVis_plotting(data_to_plot, file_path, nomad_url, token)
+        except Exception as e:
+            messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
+
+    run_with_spinner(task_UVVis_plotting_function)
 
 def merge_UVVis_files():
     def task_merge_UVVis_files():
@@ -571,7 +593,7 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
 
 buttons_info3 = [ #buttons für frame 2
     ("Halfstack filter", free_filter_for_halfstacks, "Filter your data for halfstacks if wished (optional and repeatable)."), 
-    ("UVVis plotting", None, "Plot your UVVis data with the band gaps."),
+    ("UVVis plotting", UVVis_plotting_function, "Plot your UVVis data with the band gaps."),
 ]
 
 row_index = 1

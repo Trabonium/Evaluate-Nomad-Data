@@ -52,13 +52,13 @@ def freier_filter(df, master):
     button_frame = tk.Frame(filter_window)
     button_frame.pack(pady=5)
 
-    remove_button = tk.Button(button_frame, text="Ausgegraute Zeilen markieren", command=remove_selected)
+    remove_button = tk.Button(button_frame, text="Kick out", command=remove_selected)
     remove_button.pack()
     
     refresh_button = tk.Button(button_frame, text="Reset", command=restore_grayed_rows)
     refresh_button.pack()
 
-    finish_button = tk.Button(button_frame, text="Fertig", command=remove_grayed_rows)
+    finish_button = tk.Button(button_frame, text="Done", command=remove_grayed_rows)
     finish_button.pack()
 
     tree.configure(selectmode='extended')  # Aktiviert Mehrfachauswahl mit Shift und Pfeiltasten
