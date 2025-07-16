@@ -87,8 +87,7 @@ def UVVis_plotting(data, file_path, nomad_url, token):
             df = pd.DataFrame(data_dict)
 
             # photon energy berechnen
-            df["photonenergy"] = 1240 / df["wavelength"]
-            df["absorption"] = 100.0 - df["reflection"] - df["transmission"]
+            df["photonenergy"] = 1239.841984 / df["wavelength"]
 
             # Spline, Ableitung, Smoothen
             energy_range = np.linspace(df["photonenergy"].min(), df["photonenergy"].max(), 1001)
