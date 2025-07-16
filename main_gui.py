@@ -98,12 +98,13 @@ def handle_drop(event):
     
 def load_data():
     def task_load_data():
-        global data
+        global data, filtered_data
         if not selected_file_path:
             messagebox.showerror("Error", "Please choose Excel first.")
             return
         try:
             data = get_data_excel_to_df(selected_file_path, nomad_url, token)
+            filtered_data = None
             #print(data)
             #print(data['variation'].unique().tolist())
         except Exception as e:
@@ -142,7 +143,7 @@ def calculate_stats():
 def csv_raw_export():
     def task_csv_raw_export():
         if data is None:
-            messagebox.showerror("Error", "Please load data first!")
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load data first!: {e}"))
             return
         else:
             path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
@@ -153,7 +154,7 @@ def csv_raw_export():
 def csv_filtered_export():
     def task_csv_filtered_export():
         if filtered_data is None:
-            messagebox.showerror("Error", "Please filter data first!")
+            root.after(0, lambda : messagebox.showerror("Error", f"Please filter data first!: {e}"))
             return
         else:
             path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
@@ -165,7 +166,7 @@ def free_filter_for_halfstacks():
     def task_free_filter_for_halfstacks():
         global filtered_data, data
         if data is None:
-            messagebox.showerror("Error", "Please load your data first!")
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
             return
         try:
             filtered_data = freier_filter(data, master=root)
@@ -178,7 +179,7 @@ def free_filter_for_halfstacks():
 
             canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
         except Exception as e:
-            messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+            root.after(0, lambda : messagebox.showerror("Error", f"Filtering gone wrong: {e}"))
     run_with_spinner(task_free_filter_for_halfstacks)
 
 def UVVis_plotting_function():
@@ -186,7 +187,7 @@ def UVVis_plotting_function():
         global filtered_data, data, nomad_url, token
         #check if data is loaded
         if data is None:
-            messagebox.showerror("Error", "Please load your data first!")
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
             return
         #get place to save the plot
         file_path = filedialog.asksaveasfilename(
@@ -203,8 +204,7 @@ def UVVis_plotting_function():
         try:
             UVVis_plotting(data_to_plot, file_path, nomad_url, token)
         except Exception as e:
-            messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
-
+            root.after(0, lambda : messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}"))
     run_with_spinner(task_UVVis_plotting_function)
 
 def merge_UVVis_files():
