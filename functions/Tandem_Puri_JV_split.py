@@ -84,7 +84,7 @@ def tandem_puri_jv_split(master):
             reverse = parse_scan(reverse_lines)
 
             scan_index = idx // 2 + 1
-            filename = f"{sample_name}_px{scan_index}.csv"
+            filename = f"{sample_name}_px{scan_index}.jv.csv"
             output_path = os.path.join(output_folder, filename)
 
             content = format_old_file(sample_name, area, is_illuminated, date, forward, reverse)

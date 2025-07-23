@@ -8,7 +8,7 @@ def UVVis_merge(master):
 
     def get_unique_filename(original_path, new_filename):
         dir_path = os.path.dirname(original_path)
-        new_path = os.path.join(dir_path, new_filename + ".csv")
+        new_path = os.path.join(dir_path, new_filename + ".uvvis.csv")
         counter = 1
         while os.path.exists(new_path):
             new_path = os.path.join(dir_path, f"{new_filename}_{counter}.csv")
