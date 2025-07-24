@@ -46,6 +46,7 @@ directory = None
 file_name = None
 filter_cycle_boolean = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
+uvvis_unit_mode = "wavelength" # default for UVVis plotting
 
 
 def show_auto_close_message(title, message, timeout=3000):
@@ -184,7 +185,7 @@ def free_filter_for_halfstacks():
 
 def UVVis_plotting_function():
     def task_UVVis_plotting_function():
-        global filtered_data, data, nomad_url, token
+        global filtered_data, data, nomad_url, token, uvvis_unit_mode
         #check if data is loaded
         if data is None:
             root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
@@ -202,10 +203,24 @@ def UVVis_plotting_function():
         data_to_plot = filtered_data if filtered_data is not None else data
 
         try:
-            UVVis_plotting(data_to_plot, file_path, nomad_url, token)
+            UVVis_plotting(data_to_plot, file_path, nomad_url, token, unit = uvvis_unit_mode)
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}"))
     run_with_spinner(task_UVVis_plotting_function)
+
+def toggle_uvvis_unit():
+    global uvvis_unit_mode
+    if uvvis_unit_mode == "wavelength":
+        uvvis_unit_mode = "photon_energy"
+        uvvis_toggle_button.config(text="photon energy [eV]")
+    elif uvvis_unit_mode == "photon_energy":
+        uvvis_unit_mode = "tauc_plot"
+        uvvis_toggle_button.config(text="Tauc plot (for 500 nm thickness))")
+    else:  
+        uvvis_unit_mode = "wavelength"
+        uvvis_toggle_button.config(text="wavelength [nm]")
+
+
 
 def merge_UVVis_files():
     def task_merge_UVVis_files():
@@ -596,7 +611,18 @@ buttons_info3 = [ #buttons für frame 2
     ("UVVis plotting", UVVis_plotting_function, "Plot your UVVis data with the band gaps."),
 ]
 
-row_index = 1
+uvvis_toggle_button = ttk.Button(frame2, text="wavelength [nm]", command=toggle_uvvis_unit)
+uvvis_toggle_button.grid(row=row_index+2, column=0, pady=5, sticky="w")
+
+# Optional: Tooltip & Hover
+apply_hover_effect(uvvis_toggle_button, "TButton", "Hover.TButton")
+help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
+help_label.grid(row=row_index, column=1, padx=5)
+help_label.bind("<Enter>", lambda e: show_tooltip(e, "Toggle between wavelength [nm] and photon energy [eV]."))
+help_label.bind("<Leave>", hide_tooltip)
+
+row_index += 1
+
 for text, command, tooltip in buttons_info3:
     btn = ttk.Button(frame2, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
