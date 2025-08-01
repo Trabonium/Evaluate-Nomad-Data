@@ -224,9 +224,10 @@ process_config = {
                               "Source temperature [°C]", "Substrate temperature [°C]", "Material state", "Substrate source distance [mm]",
                               "Thickness [nm]", "Deposition Time [s]", "Carrier gas", "Notes"]},
 
-    "Lamination": {"steps": ["Interface", "Tool/GB name", "Plate temperature [°C]", "Pressure [MPa]", "Area [mm^2]", "Time [s]",
-                             "Heat up time [s]", "Cool down time [s]", 
-                             "Stamp Material", "Stamp Thickness [mm]", "Stamp Area [mm^2]", "Notes"]},
+    "Lamination": {"steps": ["Interface", "Tool/GB name", "Temperature during process[°C]",  "Temperature at pressure relief [°C]", "Pressure [MPa]", "Force [N]",  
+                             "Time lamination [s]", "Heat up time [s]", "Cool down time [s]", "Total time [s]", "Athmosphere in chamber", "Humidity [%%rel]",
+                             "Stamp 1 Material", "Stamp 1 Thickness [mm]", "Stamp 1 Area [mm^2]", "Stamp 2 Material", "Stamp 2 Thickness [mm]", "Stamp 2 Area [mm^2]",
+                             "Homogeniously pressed [1/0]", "Sucessful adhesion [1/0]", "Notes"]},
 
     "Sputtering": {"steps": ["Material name", "Layer type", "Tool/GB name", "Gas", "Temperature [°C]", "Pressure [mbar]",
                              "Deposition time [s]", "Burn in time [s]", "Power [W]", "Rotation rate [rpm]",
