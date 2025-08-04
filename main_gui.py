@@ -215,7 +215,7 @@ def toggle_uvvis_unit():
         uvvis_toggle_button.config(text="photon energy [eV]")
     elif uvvis_unit_mode == "photon_energy":
         uvvis_unit_mode = "tauc_plot"
-        uvvis_toggle_button.config(text="Tauc plot (for 500 nm thickness))")
+        uvvis_toggle_button.config(text="Tauc plot (for 550 nm thickness)")
     else:  
         uvvis_unit_mode = "wavelength"
         uvvis_toggle_button.config(text="wavelength [nm]")
