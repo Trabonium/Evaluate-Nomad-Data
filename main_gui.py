@@ -21,7 +21,7 @@ from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
-from functions.UVVis_plotting import UVVis_plotting  
+from functions.UVVis_plotting import UVVis_plotting     
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
@@ -583,7 +583,7 @@ hysteresis = tk.BooleanVar(value=False)
 eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
-picture_var = tk.BooleanVar(value=True)
+picture_var = tk.BooleanVar(value=False)
 
 # Checkboxen
 plot_options = [
@@ -591,10 +591,10 @@ plot_options = [
     ("Box + Scatter Plots", box_var, "Plots the box and scatter plots for your batch statistics."),
     ("Separate Backwards/Forwards", separate_scan_var, "Adds the reverse and forwards differentiation to your box and scatter plots."),
     ("Hysteresis plot", hysteresis, "Plots the hysteresis as a box + scatter plot."),
-    ("EQE Curves", eqe_var, "Plot EQE data."),
-    ("MPP Curves", mpp_var, "Plots the MPP tracking."),
+    ("EQE Curves", eqe_var, "Plot EQE data - of the best availabe sample for each variation"),
+    ("MPP Curves", mpp_var, "Plots the MPP tracking - of the best availabe sample for each variation"),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
-    ("Generate pictures", picture_var, "Generates extra pictures of the plots.")
+    ("Generate pictures", picture_var, "Saves all plots as png additionally to the pdf report.")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):
@@ -640,7 +640,7 @@ buttons_info4 = [ #buttons für frame 3
     ("Old data renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
-    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format."), 
+    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format. Adds .jv to the end of the filename and changes the cycle and pixel info to be read properly"), 
     ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
 ]
 
