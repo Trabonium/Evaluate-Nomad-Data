@@ -109,7 +109,10 @@ def load_data():
             #print(data)
             #print(data['variation'].unique().tolist())
         except Exception as e:
-            root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
+            try:
+                root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
+            except: 
+                root.after(0, lambda : messagebox.showerror("Error", "Data could not be loaded."))
     run_with_spinner(task_load_data)
 
 # Daten filtern
@@ -219,7 +222,6 @@ def toggle_uvvis_unit():
     else:  
         uvvis_unit_mode = "wavelength"
         uvvis_toggle_button.config(text="wavelength [nm]")
-
 
 
 def merge_UVVis_files():
