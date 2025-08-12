@@ -134,7 +134,7 @@ def plot_tauc(data, file_path, nomad_url, token):
 
             max_index = np.argmax(savgol_filter(derivative, 101, 3))
             if max_index < 10 or max_index + 10 >= len(x):
-                raise RuntimeError("Nicht genügend Daten für Fit")
+                raise RuntimeError("Not enough data points for fitting.")
 
             x_fit = x[max_index - 10: max_index + 10]
             y_fit = y_smooth[max_index - 10: max_index + 10]
@@ -142,7 +142,7 @@ def plot_tauc(data, file_path, nomad_url, token):
             #find stable Tauc fit
             fit_result = find_best_tauc_fit(x, y_smooth)
             if fit_result is None:
-                print(f"Kein brauchbarer Fit für Sample {data['sample_id'][i]}")
+                print(f"Fit is too bad {data['sample_id'][i]}")
                 continue
 
             x_fit = fit_result["x_fit"]
@@ -163,12 +163,12 @@ def plot_tauc(data, file_path, nomad_url, token):
             ax.scatter([bandgap], [0], color=color, zorder=5)
 
         except Exception as e:
-            print(f"Fehler bei Sample {data['sample_id'][i]}: {e}")
+            print(f"Error with sample {data['sample_id'][i]}: {e}")
             continue
 
-    ax.set_xlabel('Photonenenergie (eV)')
+    ax.set_xlabel('Photon Energy (eV)')
     ax.set_ylabel('$(αhv)^2$ (a.u.)')
-    ax.set_title('Tauc-Plot (direkter Übergang)')
+    ax.set_title('Tauc-Plot (direct semiconductor)')
     ax.grid(True)
     ax.legend()
     plt.tight_layout()
