@@ -99,15 +99,14 @@ def handle_drop(event):
     
 def load_data():
     def task_load_data():
-        global data, filtered_data
+        global data, filtered_data, filter_cycle_boolean
         if not selected_file_path:
             messagebox.showerror("Error", "Please choose Excel first.")
             return
         try:
             data = get_data_excel_to_df(selected_file_path, nomad_url, token)
             filtered_data = None
-            #print(data)
-            #print(data['variation'].unique().tolist())
+            filter_cycle_boolean = None
         except Exception as e:
             try:
                 root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
