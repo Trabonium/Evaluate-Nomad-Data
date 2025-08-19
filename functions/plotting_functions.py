@@ -234,8 +234,8 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
         # Use only the base color palette
         colors = base_colors
 
-    # Sort the unique variation groups first to ensure consistent order
-    sorted_variations = sorted(df[quantity].unique())
+    # take original order
+    sorted_variations = pd.unique(df[quantity])[::-1]
     if SeparateScanDir:
         sorted_groups = [
             f"{group}_bw" if i % 2 == 0 else f"{group}_fw"
@@ -445,8 +445,8 @@ def plot_hysteresis(df): #quantity is here default 'variation'
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df_quotient['variation'].unique())))
     colors = base_colors
 
-    # Sortiere die Variationen
-    sorted_variations = sorted(df_quotient['variation'].unique())
+    #original order
+    sorted_variations = pd.unique(df_quotient['variation'])[::-1]
 
     # Boxplot-Setup
     fig, ax = plt.subplots(figsize=(8, 6))
