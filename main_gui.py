@@ -194,8 +194,8 @@ def UVVis_plotting_function():
             return
         #get place to save the plot
         file_path = filedialog.asksaveasfilename(
-            defaultextension=".png",
-            filetypes=[("PNG files", "*.png")]
+            defaultextension=".svg",
+            filetypes=[("SVG files", "*.svg")]
         )
         #check if user has chosen a file
         if not file_path:
@@ -595,7 +595,7 @@ plot_options = [
     ("EQE Curves", eqe_var, "Plot EQE data - of the best availabe sample for each variation"),
     ("MPP Curves", mpp_var, "Plots the MPP tracking - of the best availabe sample for each variation"),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
-    ("Generate pictures", picture_var, "Saves all plots as png additionally to the pdf report.")
+    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report.")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):

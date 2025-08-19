@@ -59,13 +59,13 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
         if include_plots.get('JV', False):
             fig_max = plot_JV_curves(result_df, 'maximum_efficiency', nomad_url, token)
             if include_plots.get('Picture', False):
-                fig_max.savefig(directory+"/"+ file_name[:-4]+"_Best_JV.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig_max.savefig(directory+"/"+ file_name[:-4]+"_Best_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_max, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_max)
 
             fig_med = plot_JV_curves(result_df, 'closest_median', nomad_url, token)
             if include_plots.get('Picture', False):
-                fig_med.savefig(directory+"/"+ file_name[:-4]+"_Median_JV.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig_med.savefig(directory+"/"+ file_name[:-4]+"_Median_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_med, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_med)
 
@@ -74,14 +74,14 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
             SeparateScanDir = include_plots.get('SeparateScan', False)
             fig = plot_box_and_scatter(df, filter_cycle_boolean, 'variation', SeparateScanDir)
             if include_plots.get('Picture', False):
-                fig.savefig(directory+"/"+ file_name[:-4]+"_boxplot.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig.savefig(directory+"/"+ file_name[:-4]+"_boxplot.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig)
 
         if include_plots.get('Hysteresis', False):
             fig_hys = plot_hysteresis(df)
             if include_plots.get('Picture', False):
-                fig_hys.savefig(directory+"/"+ file_name[:-4]+"_Hysteresis_JV.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig_hys.savefig(directory+"/"+ file_name[:-4]+"_Hysteresis_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_hys, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig)
 
@@ -89,7 +89,7 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
         if include_plots.get('EQE', False):
             fig_eqe = plot_EQE_curves(df, result_df, nomad_url, token)
             if include_plots.get('Picture', False):
-                fig_eqe.savefig(directory+"/"+ file_name[:-4]+"_EQE.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig_eqe.savefig(directory+"/"+ file_name[:-4]+"_EQE.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_eqe, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_eqe)
 
@@ -97,7 +97,7 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
         if include_plots.get('MPP', False):
             fig_mpp = plot_MPP_curves(df, result_df, nomad_url, token)
             if include_plots.get('Picture', False):
-                fig_mpp.savefig(directory+"/"+ file_name[:-4]+"_MPP_JV.png", dpi = 500, bbox_inches = "tight", facecolor="white")
+                fig_mpp.savefig(directory+"/"+ file_name[:-4]+"_MPP_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_mpp, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_mpp)
 
