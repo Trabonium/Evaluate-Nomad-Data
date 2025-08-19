@@ -93,7 +93,7 @@ def plot_tauc(data, file_path, nomad_url, token):
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
-    sort_index = np.argsort(data["variation"])
+    sort_index = range(len(data["sample_id"]))
     colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
 
     for idx, i in enumerate(sort_index):
@@ -191,7 +191,7 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token):
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
-    sort_index = np.argsort(data["variation"])
+    sort_index = range(len(data["sample_id"]))
     colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
 
     for idx, i in enumerate(sort_index):
@@ -282,7 +282,7 @@ def plot_uvvis_wavelength(data, file_path, nomad_url, token):
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
-    sort_index = np.argsort(data["variation"])
+    sort_index = range(len(data["sample_id"]))
     colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
 
     for idx, i in enumerate(sort_index):
