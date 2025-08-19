@@ -5,13 +5,13 @@ import pandas as pd
 global cycle_optimizing
 cycle_optimizing = False
 
-def filter_best_efficiency(df): #sortinng cycle sorting via best PCE
-    # Sortieren nach den relevanten Spalten und Effizienz
-    df_sorted = df.sort_values(by=['sample_id', 'variation', 'px#', 'scan_direction', 'efficiency'], ascending=[True, True, True, True, False])
-    
-    # Entfernen von Duplikaten und Behalten der Zeile mit der höchsten Effizienz
-    df_filtered = df_sorted.drop_duplicates(subset=['sample_id', 'variation', 'px#', 'scan_direction'], keep='first')
-    
+def filter_best_efficiency(df):  
+    # Index der Zeilen mit maximaler Effizienz je Gruppe finden
+    idx = df.groupby(['sample_id', 'variation', 'px#', 'scan_direction'])['efficiency'].idxmax()
+
+    # Nur diese Zeilen behalten (Reihenfolge bleibt wie im Original-DF)
+    df_filtered = df.loc[idx].sort_index()
+
     return df_filtered
 
 def create_cycle_buttons(parent, cycles, filtered_df):

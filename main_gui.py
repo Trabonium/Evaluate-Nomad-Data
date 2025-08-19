@@ -4,6 +4,7 @@ from tkinterdnd2 import DND_FILES, TkinterDnD #drag and drop window
 import requests
 import pandas as pd 
 import os, sys
+import numpy as np
 
 if not getattr(sys, 'frozen', False):  #only import in development environment
     from kedro.config import OmegaConfigLoader
@@ -104,7 +105,12 @@ def load_data():
             messagebox.showerror("Error", "Please choose Excel first.")
             return
         try:
+            #columns to check for 'nan' strings, that are not interpreted as NaN
+            cols = ["efficiency", "fill_factor", "open_circuit_voltage", "short_circuit_current_density"]
             data = get_data_excel_to_df(selected_file_path, nomad_url, token)
+            data[cols] = data[cols].replace('nan', np.nan)
+            
+            #reset values for new loaded data
             filtered_data = None
             filter_cycle_boolean = None
         except Exception as e:
@@ -137,7 +143,7 @@ def calculate_stats():
             messagebox.showerror("Error", "Please load data first!")
             return
         try:
-            stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
+            stats, best = calculate_statistics(filtered_data if filtered_data is not None else data)
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}"))
     run_with_spinner(task_calculate_stats)

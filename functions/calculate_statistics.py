@@ -45,7 +45,7 @@ def calculate_statistics(df: pd.DataFrame):
         'FF',
         'Jsc'
     ])
-
+    print('output: \n',pd.unique(df['variation'])[::-1])
     for category in pd.unique(df['variation'])[::-1]:
         category_data = df[df['variation'] == category]
 
