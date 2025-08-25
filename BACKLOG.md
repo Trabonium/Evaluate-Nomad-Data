@@ -10,7 +10,8 @@
 ## Features
 
 ### GUI
-- add UVVis tauc plot (sad emoji)
+- Rework tauc plot --> scheisse at all
+- related to Julians comments: Latex integratio to the plots (-> easier integration to a thesis) - adjusting the size of strings, e.g. in a plot to make it usable to publications
 
 
 ### Parsers
