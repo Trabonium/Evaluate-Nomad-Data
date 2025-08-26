@@ -2,8 +2,8 @@ import matplotlib as mpl
 
 def set_plot_style(use_latex: bool = False):
     """
-    Setzt globale Plot-Parameter für alle Plots.
-    :param use_latex: True → LaTeX verwenden, False → Mathtext/Computer Modern
+    Global plot parameters
+    :param use_latex: True → Use LaTeX, False → Use Mathtext/Computer Modern
     """
     if use_latex:
         mpl.rcParams.update({
@@ -32,4 +32,4 @@ def set_plot_style(use_latex: bool = False):
             "lines.linewidth": 1.5,
             "figure.dpi": 800,
         })
-# Standardmäßig ohne LaTeX
+        
