@@ -27,8 +27,9 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
         found_curve = False  # Flag to stop both loops
         for cell in jv_data:
             for i in range(2):
-                PCE = cell["jv_curve"][i]["efficiency"]
-                if cell["jv_curve"][i]["efficiency"] == row[f'{curve_type}'] and \
+                try:
+                    PCE = cell["jv_curve"][i]["efficiency"]
+                    if PCE == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
                         ax.plot(cell["jv_curve"][i]["voltage"], \
                                  cell["jv_curve"][i]["current_density"], \
@@ -37,6 +38,9 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
                             max_Voc = max(cell["jv_curve"][i]["voltage"])
                         found_curve = True
                         break
+                except:
+                    continue
+                
             if found_curve: #Stops plotting duplicates in the same configuration
                 break 
 
