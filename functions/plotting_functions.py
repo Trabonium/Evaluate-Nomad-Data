@@ -34,9 +34,14 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token, Latex_bool):
                     PCE = cell["jv_curve"][i]["efficiency"]
                     if PCE == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
-                        ax.plot(cell["jv_curve"][i]["voltage"], \
-                                 cell["jv_curve"][i]["current_density"], \
-                                 label=f"{row['category']}: {round(PCE,2)}%")
+                        if Latex_bool:
+                            ax.plot(cell["jv_curve"][i]["voltage"], \
+                                    cell["jv_curve"][i]["current_density"], \
+                                    label=fr"{row['category']}: {round(PCE,2)}\%")
+                        else:
+                            ax.plot(cell["jv_curve"][i]["voltage"], \
+                                    cell["jv_curve"][i]["current_density"], \
+                                    label=f"{row['category']}: {round(PCE,2)}%")
                         if max_Voc < max(cell["jv_curve"][i]["voltage"]):
                             max_Voc = max(cell["jv_curve"][i]["voltage"])
                         found_curve = True
@@ -135,7 +140,10 @@ def plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool):
     ax.set_xlim(wellenlenge_min-20, wellenlenge_max+20)
     ax.set_title(f'EQE Curves')
     ax.set_xlabel('Wavelength (nm)')
-    ax.set_ylabel('EQE (%)')
+    if Latex_bool:
+        ax.set_ylabel(r'EQE (\%)')
+    else:
+        ax.set_ylabel('EQE (%)')
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
@@ -205,7 +213,10 @@ def plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool):
     ax.set_ylim(0, 25)
     ax.set_title(f'MPP Tracking')
     ax.set_xlabel('Time (s)')
-    ax.set_ylabel('PCE (%)')
+    if Latex_bool:
+        ax.set_ylabel(r'PCE (\%)')
+    else:
+        ax.set_ylabel('PCE (%)')
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
@@ -260,13 +271,20 @@ def plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, quantity=['variat
 
     # Define Y-Axis Labels
     jv_quantity = ['efficiency', 'open_circuit_voltage', 'fill_factor', 'short_circuit_current_density']
-    
-    jv_quantity_labels = {
+    if Latex_bool: 
+        jv_quantity_labels = {
         'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
         'fill_factor': "FF",
-        'efficiency': "PCE (%)",
+        'efficiency': r"PCE (\%)",
         'short_circuit_current_density': r"$\mathrm{J_{sc} \, (mA/cm²)}$"
     }
+    else:
+        jv_quantity_labels = {
+            'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
+            'fill_factor': "FF",
+            'efficiency': "PCE (%)",
+            'short_circuit_current_density': r"$\mathrm{J_{sc} \, (mA/cm²)}$"
+        }
 
     #Define markers for different cycles
     scatter_cycle_marker = {
