@@ -295,6 +295,7 @@ def generate_report():
             "MPP": mpp_var.get(),
             "Table": table_var.get(), 
             "Picture": picture_var.get(),
+            "Latex": latex_var.get(),
         }
 
         file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
@@ -591,6 +592,7 @@ eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 picture_var = tk.BooleanVar(value=False)
+latex_var = tk.BooleanVar(value=False)
 
 # Checkboxen
 plot_options = [
@@ -601,7 +603,8 @@ plot_options = [
     ("EQE Curves", eqe_var, "Plot EQE data - of the best availabe sample for each variation"),
     ("MPP Curves", mpp_var, "Plots the MPP tracking - of the best availabe sample for each variation"),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
-    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report.")
+    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report."),
+    ("Latex text", latex_var, "Renders the text in the plots in LaTeX format (you need a LaTeX distribution installed).")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):
