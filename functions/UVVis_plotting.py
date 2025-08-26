@@ -80,16 +80,11 @@ def find_peaks_and_fit_gaussian(x, y):
             y_masked[fitting_range] = 0
         return results
 
-def plot_tauc(data, file_path, nomad_url, token):
+def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
     thickness_nm = 550  # Schichtdicke in nm
 
-    plt.rcParams.update({
-        'font.size': 14,
-        'axes.labelsize': 16,
-        'xtick.labelsize': 14,
-        'ytick.labelsize': 14,
-        'legend.fontsize': 14,
-    })
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_UVVis)
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
@@ -179,15 +174,10 @@ def plot_tauc(data, file_path, nomad_url, token):
         plt.show()
 
 
-def plot_uvvis_photon_energy(data, file_path, nomad_url, token):
+def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
     # === Plot-Setup ===
-    plt.rcParams.update({
-        'font.size': 14,
-        'axes.labelsize': 16,
-        'xtick.labelsize': 14,
-        'ytick.labelsize': 14,
-        'legend.fontsize': 14,
-    })
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_UVVis)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -253,7 +243,10 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token):
             axs[1].set_xlabel("Photon Energy (eV)")
             axs[1].set_ylabel("d(Absorption)/d(Energy)")
 
-            axs[0].set_ylabel("Absorption (%)")
+            if Latex_UVVis:
+                axs[0].set_ylabel(r"Absorption (\%)")
+            else:
+                axs[0].set_ylabel("Absorption (%)")
 
         except Exception as e:
             print(f"Error processing sample {data['sample_id'][i]}: {e}")
@@ -270,15 +263,10 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token):
 
     return
 
-def plot_uvvis_wavelength(data, file_path, nomad_url, token):
+def plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis):
     # === Plot-Setup ===
-    plt.rcParams.update({
-        'font.size': 14,
-        'axes.labelsize': 16,
-        'xtick.labelsize': 14,
-        'ytick.labelsize': 14,
-        'legend.fontsize': 14,
-    })
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_UVVis)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -351,8 +339,10 @@ def plot_uvvis_wavelength(data, file_path, nomad_url, token):
             axs[0].invert_xaxis()  # ⬅️ neu: linke Achse invertieren!
             axs[1].invert_xaxis()
             axs[1].set_ylabel("d(Absorption)/d(Wavelength)")
-
-            axs[0].set_ylabel("Absorption (%)")
+            if Latex_UVVis:
+                axs[0].set_ylabel(r"Absorption (\%)")
+            else:
+                axs[0].set_ylabel("Absorption (%)")
 
         except Exception as e:
             print(f"Error processing sample {data['sample_id'][i]}: {e}")
@@ -369,12 +359,12 @@ def plot_uvvis_wavelength(data, file_path, nomad_url, token):
 
     return
 
-def UVVis_plotting(data, file_path, nomad_url, token, unit):
+def UVVis_plotting(data, file_path, Latex_UVVis, nomad_url, token, unit):
     if unit == "tauc_plot":
-        return plot_tauc(data, file_path, nomad_url, token)
+        return plot_tauc(data, file_path, nomad_url, token, Latex_UVVis)
     elif unit == "photon_energy":
-        return plot_uvvis_photon_energy(data, file_path, nomad_url, token)
+        return plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis)
     elif unit == "wavelength":
-        return plot_uvvis_wavelength(data, file_path, nomad_url, token)
+        return plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis)
     else:
         raise ValueError(f"Unknown unit: {unit}")

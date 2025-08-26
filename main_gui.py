@@ -194,6 +194,7 @@ def free_filter_for_halfstacks():
 def UVVis_plotting_function():
     def task_UVVis_plotting_function():
         global filtered_data, data, nomad_url, token, uvvis_unit_mode
+        Latex_UVVis = latex_var.get()
         #check if data is loaded
         if data is None:
             root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
@@ -211,7 +212,7 @@ def UVVis_plotting_function():
         data_to_plot = filtered_data if filtered_data is not None else data
 
         try:
-            UVVis_plotting(data_to_plot, file_path, nomad_url, token, unit = uvvis_unit_mode)
+            UVVis_plotting(data_to_plot, file_path, Latex_UVVis, nomad_url, token, unit = uvvis_unit_mode)
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}"))
     run_with_spinner(task_UVVis_plotting_function)
