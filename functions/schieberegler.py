@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
+from datetime import datetime, timedelta
+from tkinter import messagebox
 
 global cycle_optimizing
 cycle_optimizing = False
@@ -117,14 +119,30 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     def update_label():
         current_min = df_min_max_self.at[slider_id, 'Min']
         current_max = df_min_max_self.at[slider_id, 'Max']
-        min_var.set(current_min)
-        max_var.set(current_max)
+        
+        # Special handling for datetime display
+        if title == "Datetime":
+            min_date = datetime.fromtimestamp(current_min)
+            max_date = datetime.fromtimestamp(current_max)
+            min_var.set(min_date.strftime("%Y-%m-%d %H:%M"))
+            max_var.set(max_date.strftime("%Y-%m-%d %H:%M"))
+        else:
+            min_var.set(current_min)
+            max_var.set(current_max)
 
     # Aktualisiere Schieberegler aus Eingabefeldern
     def update_from_entry(event=None):
         try:
-            new_min = float(min_var.get())
-            new_max = float(max_var.get())
+            if title == "Datetime":
+                # Handle datetime input
+                new_min_date = datetime.strptime(min_var.get(), "%Y-%m-%d %H:%M")
+                new_max_date = datetime.strptime(max_var.get(), "%Y-%m-%d %H:%M")
+                new_min = new_min_date.timestamp()
+                new_max = new_max_date.timestamp()
+            else:
+                # Handle numeric input
+                new_min = float(min_var.get())
+                new_max = float(max_var.get())
 
             # Stellen sicher, dass der Wert innerhalb der Min/Max Grenzen liegt
             if min_val <= new_min <= max_val and new_min <= df_min_max_self.at[slider_id, 'Max']:
@@ -142,18 +160,26 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
             pass
 
     # Variablen für Eingabefelder
-    min_var = tk.StringVar(value=str(init_min))
-    max_var = tk.StringVar(value=str(init_max))
+    if title == "Datetime":
+        init_min_date = datetime.fromtimestamp(init_min)
+        init_max_date = datetime.fromtimestamp(init_max)
+        min_var = tk.StringVar(value=init_min_date.strftime("%Y-%m-%d %H:%M"))
+        max_var = tk.StringVar(value=init_max_date.strftime("%Y-%m-%d %H:%M"))
+        entry_width = 15
+    else:
+        min_var = tk.StringVar(value=str(init_min))
+        max_var = tk.StringVar(value=str(init_max))
+        entry_width = 10
 
     # Eingabefelder
     entry_frame = ttk.Frame(frame)
     entry_frame.pack(pady=10)
 
-    min_entry = ttk.Entry(entry_frame, textvariable=min_var, width=10)
+    min_entry = ttk.Entry(entry_frame, textvariable=min_var, width=entry_width)
     min_entry.pack(side=tk.LEFT, padx=5)
     min_entry.bind("<Return>", update_from_entry)
 
-    max_entry = ttk.Entry(entry_frame, textvariable=max_var, width=10)
+    max_entry = ttk.Entry(entry_frame, textvariable=max_var, width=entry_width)
     max_entry.pack(side=tk.LEFT, padx=5)
     max_entry.bind("<Return>", update_from_entry)
 
@@ -198,6 +224,7 @@ def open_sliders_window(filter_window, df_min_max_bounds, master, cycles, filter
 
     # Schieberegler erstellen
     for i, row in df_min_max_bounds.iterrows():
+        # Use same function for all parameters, including datetime
         create_dual_slider(
             scrollable_frame,
             title=row['Parameter'],
@@ -207,13 +234,16 @@ def open_sliders_window(filter_window, df_min_max_bounds, master, cycles, filter
             init_max=row['Max'],
             slider_id=i,
             update_df_func=update_df_func, 
-            first_slider=(i==0) #first slider True bei erstem durchlauf. folge ist dass der erste vertikale strich geskipped wird
+            first_slider=(i==0)
         )
 
-    if cycles is not None:
+    print(f"Cycles available: {cycles}")
+    if cycles is not None and len(cycles) > 0:
+        print("Creating cycle buttons...")
         filtered_df["Cycle#"] = filtered_df["Cycle#"].astype(int)  # Erzwinge `int`-Typisierung
-        best_efficiency_var = create_cycle_buttons(scrollable_frame, cycles, filtered_df)  # Kein update_df_func mehr nötig!
+        best_efficiency_var = create_cycle_buttons(scrollable_frame, cycles, filtered_df)
     else:
+        print("No cycles found or cycles is None")
         best_efficiency_var = False
 
     
@@ -233,19 +263,56 @@ def schieberegler_main(filter_window, filtered_df, master, cycles):
     # Erstelle df_min_max_bounds mit Min- und Max-Werten
     df_min_max_bounds = pd.DataFrame(columns=["Parameter", "Min", "Max"])
 
-    df_min_max_bounds["Parameter"] = ["PCE", "FF", "Voc", "Jsc"]
-    df_min_max_bounds["Min"] = [
+    # Standard Parameter
+    parameters = ["PCE", "FF", "Voc", "Jsc"]
+    min_values = [
         min(filtered_df["efficiency"].tolist()),
         min(filtered_df["fill_factor"].tolist()),
         min(filtered_df["open_circuit_voltage"].tolist()),
         min(filtered_df["short_circuit_current_density"].tolist()),
     ]
-    df_min_max_bounds["Max"] = [
+    max_values = [
         max(filtered_df["efficiency"].tolist()),
         max(filtered_df["fill_factor"].tolist()),
         max(filtered_df["open_circuit_voltage"].tolist()),
         max(filtered_df["short_circuit_current_density"].tolist()),
     ]
+
+    # Prüfen ob datetime-Spalte vorhanden ist und gültige Daten enthält
+    if 'datetime' in filtered_df.columns:
+        try:
+            # Don't convert here, just check if datetime data exists
+            datetime_data = filtered_df['datetime'].dropna()
+            if len(datetime_data) > 0:
+                # Convert only for getting min/max timestamps
+                datetime_series = pd.to_datetime(datetime_data)
+                min_datetime_raw = datetime_series.min()
+                max_datetime_raw = datetime_series.max()
+                
+                # Widen bounds significantly to ensure no data loss when slider is not moved
+                # Subtract 1 hour from min, add 1 hour to max
+                min_datetime = min_datetime_raw - pd.Timedelta(hours=1)
+                max_datetime = max_datetime_raw + pd.Timedelta(hours=1)
+                
+                # Round to nice boundaries
+                min_datetime = min_datetime.replace(second=0, microsecond=0)
+                max_datetime = max_datetime.replace(second=0, microsecond=0)
+                
+                min_timestamp = min_datetime.timestamp()
+                max_timestamp = max_datetime.timestamp()
+                
+                # Datetime als ersten Parameter hinzufügen
+                parameters.insert(0, "Datetime")
+                min_values.insert(0, min_timestamp)
+                max_values.insert(0, max_timestamp)
+                print(f"Added datetime filter with wide bounds: {min_datetime} to {max_datetime}")
+                print(f"Original data range: {min_datetime_raw} to {max_datetime_raw}")
+        except Exception as e:
+            print(f"Error processing datetime column: {e}")
+
+    df_min_max_bounds["Parameter"] = parameters
+    df_min_max_bounds["Min"] = min_values
+    df_min_max_bounds["Max"] = max_values
 
     df_min_max_self = df_min_max_bounds.copy()
 
@@ -259,6 +326,7 @@ def update_df_func(slider_id, param, value):
 
 def main_filter(df_default_werte, master):
     global cycle_optimizing
+    
     filtered_df = df_default_werte.copy() #zuerst kopie definieren
     filtered_df['cyclefilter'] = True
 
@@ -266,8 +334,8 @@ def main_filter(df_default_werte, master):
     filtered_df = filtered_df.dropna(subset=['efficiency', 'fill_factor', 'open_circuit_voltage', 'short_circuit_current_density'])
 
     filter_window = tk.Toplevel(master)
-    filter_window.title("Dual Sliders")
-    filter_window.geometry("400x700")
+    filter_window.title("Data Filters")
+    filter_window.geometry("400x800")
 
     cycles = None
     #print(filtered_df.columns)
@@ -282,6 +350,29 @@ def main_filter(df_default_werte, master):
 
     #print("jetzt richtig?: ", cycle_optimizing)
 
+    # Apply datetime filter if datetime parameter exists
+    datetime_row = df_min_max_self[df_min_max_self["Parameter"] == "Datetime"]
+    if not datetime_row.empty and 'datetime' in filtered_df.columns:
+        try:
+            # Get datetime filter values (timestamps) and convert to datetime strings with hours/minutes
+            min_timestamp = datetime_row["Min"].values[0]
+            max_timestamp = datetime_row["Max"].values[0]
+            min_date_str = datetime.fromtimestamp(min_timestamp).strftime('%Y-%m-%d %H:%M')
+            max_date_str = datetime.fromtimestamp(max_timestamp).strftime('%Y-%m-%d %H:%M')
+            
+            print(f"Datetime filter range: {min_date_str} to {max_date_str}")
+            
+            original_count = len(filtered_df)
+            # String comparison with hour:minute precision
+            filtered_df = filtered_df[
+                (filtered_df['datetime'] >= min_date_str) & 
+                (filtered_df['datetime'] <= max_date_str)
+            ]
+            print(f"Datetime filter applied: {original_count} -> {len(filtered_df)} rows")
+            
+        except Exception as e:
+            print(f"Error applying datetime filter: {e}")
+
     #filtergrößen:
     min_pce = df_min_max_self[df_min_max_self["Parameter"] == "PCE"]["Min"].values[0]
     max_pce = df_min_max_self[df_min_max_self["Parameter"] == "PCE"]["Max"].values[0]
@@ -293,20 +384,33 @@ def main_filter(df_default_werte, master):
     max_voc = df_min_max_self[df_min_max_self["Parameter"] == "Voc"]["Max"].values[0]
 
     #nach NaN filter jetzt aktiveer datenfilter
+    print(f"Before performance filters: {len(filtered_df)} rows")
     filtered_df = filtered_df[(filtered_df['efficiency'] >= min_pce) & (filtered_df['efficiency'] <= max_pce)]
     filtered_df = filtered_df[(filtered_df['fill_factor'] >= min_ff) & (filtered_df['fill_factor'] <= max_ff)]
     filtered_df = filtered_df[(filtered_df['open_circuit_voltage'] >= min_voc) & (filtered_df['open_circuit_voltage'] <= max_voc)]
     filtered_df = filtered_df[(filtered_df['short_circuit_current_density'] >= min_jsc) & (filtered_df['short_circuit_current_density'] <= max_jsc)]
+    print(f"After performance filters: {len(filtered_df)} rows")
+    
+    if 'datetime' in filtered_df.columns and len(filtered_df) > 0:
+        print(f"Datetime range after performance filters: {filtered_df['datetime'].min()} to {filtered_df['datetime'].max()}")
     
     if filtered_df['Cycle#'].isna().all():
         cycle_optimizing = False
 
     if cycle_optimizing:
-        #print("Filtert nur den besten Cycle pro Variation")
+        print("Applying best cycle filter...")
+        print(f"Before best cycle filter: {len(filtered_df)} rows")
         filtered_df = filter_best_efficiency(filtered_df)
+        print(f"After best cycle filter: {len(filtered_df)} rows")
     else:
         if filtered_df["Cycle#"].notna().all():
+            print("Applying cycle selection filter...")
+            print(f"Before cycle selection filter: {len(filtered_df)} rows")
             filtered_df = filtered_df[filtered_df["cyclefilter"] == True]  # Nur aktive Zyklen behalten
+            print(f"After cycle selection filter: {len(filtered_df)} rows")
+    
+    if 'datetime' in filtered_df.columns and len(filtered_df) > 0:
+        print(f"Final datetime range: {filtered_df['datetime'].min()} to {filtered_df['datetime'].max()}")
         
     filtered_df = filtered_df.drop(columns=["cyclefilter"])  # Spalte entfernen, bevor DataFrame zurückgegeben wird
 
