@@ -16,7 +16,7 @@ def set_plot_style(use_latex: bool = False):
             "ytick.labelsize": 10,
             "legend.fontsize": 10,
             "lines.linewidth": 1.5,
-            "figure.dpi": 300,
+            "figure.dpi": 800,
         })
     else:
         mpl.rcParams.update({
@@ -30,6 +30,6 @@ def set_plot_style(use_latex: bool = False):
             "ytick.labelsize": 10,
             "legend.fontsize": 10,
             "lines.linewidth": 1.5,
-            "figure.dpi": 300,
+            "figure.dpi": 800,
         })
 # Standardmäßig ohne LaTeX
