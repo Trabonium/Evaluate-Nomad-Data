@@ -7,6 +7,19 @@ from tkinter import messagebox
 global cycle_optimizing
 cycle_optimizing = False
 
+def parse_datetime_safe(dt_str):
+    """Parse datetime string handling both ISO format (with T) and simple format"""
+    try:
+        if 'T' in dt_str:
+            # ISO format: '2025-08-21T12:01:28+00:00'
+            # Parse and ignore timezone for local comparison
+            return pd.to_datetime(dt_str).replace(tzinfo=None)
+        else:
+            # Simple format: '2025-08-21 13:01'
+            return pd.to_datetime(dt_str)
+    except:
+        return None
+
 def filter_best_efficiency(df):  
     # Index der Zeilen mit maximaler Effizienz je Gruppe finden
     idx = df.groupby(['sample_id', 'variation', 'px#', 'scan_direction'])['efficiency'].idxmax()
@@ -91,9 +104,29 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     # Zeichne die Slider-Leiste
     canvas.create_line(10, 20, canvas_width - 10, 20, fill="grey", width=4)
 
+    # Handle datetime objects for slider calculations
+    if title == "Datetime":
+        # Convert datetime objects to timestamps for slider positioning
+        if isinstance(min_val, pd.Timestamp):
+            min_val_calc = min_val.timestamp()
+            max_val_calc = max_val.timestamp()
+            init_min_calc = init_min.timestamp()
+            init_max_calc = init_max.timestamp()
+        else:
+            min_val_calc = min_val.timestamp() if hasattr(min_val, 'timestamp') else min_val
+            max_val_calc = max_val.timestamp() if hasattr(max_val, 'timestamp') else max_val
+            init_min_calc = init_min.timestamp() if hasattr(init_min, 'timestamp') else init_min
+            init_max_calc = init_max.timestamp() if hasattr(init_max, 'timestamp') else init_max
+    else:
+        min_val_calc = min_val
+        max_val_calc = max_val
+        init_min_calc = init_min
+        init_max_calc = init_max
+
     # Initiale Positionen
-    init_min_pos = 10 + ((init_min - min_val) / (max_val - min_val)) * (canvas_width - 20)
-    init_max_pos = 10 + ((init_max - min_val) / (max_val - min_val)) * (canvas_width - 20)
+    init_min_pos = 10 + ((init_min_calc - min_val_calc) / (max_val_calc - min_val_calc)) * (canvas_width - 20)
+    init_max_pos = 10 + ((init_max_calc - min_val_calc) / (max_val_calc - min_val_calc)) * (canvas_width - 20)
+    init_max_pos = 10 + ((init_max_calc - min_val_calc) / (max_val_calc - min_val_calc)) * (canvas_width - 20)
 
     slider1 = canvas.create_line(init_min_pos, 10, init_min_pos, 30, fill="blue", width=3)
     slider2 = canvas.create_line(init_max_pos, 10, init_max_pos, 30, fill="red", width=3)
@@ -102,7 +135,13 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     def move_slider1(event):
         x = event.x
         if 10 <= x <= canvas.coords(slider2)[0]:  # Slider1 darf nicht rechts von Slider2 sein
-            new_min = min_val + ((x - 10) / (canvas_width - 20)) * (max_val - min_val)
+            if title == "Datetime":
+                # Calculate new datetime value
+                ratio = (x - 10) / (canvas_width - 20)
+                new_timestamp = min_val_calc + ratio * (max_val_calc - min_val_calc)
+                new_min = datetime.fromtimestamp(new_timestamp)
+            else:
+                new_min = min_val + ((x - 10) / (canvas_width - 20)) * (max_val - min_val)
             canvas.coords(slider1, x, 10, x, 30)
             update_df_func(slider_id, 'Min', new_min)
             update_label()
@@ -110,7 +149,13 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     def move_slider2(event):
         x = event.x
         if canvas.coords(slider1)[0] <= x <= canvas_width - 10:  # Slider2 darf nicht links von Slider1 sein
-            new_max = min_val + ((x - 10) / (canvas_width - 20)) * (max_val - min_val)
+            if title == "Datetime":
+                # Calculate new datetime value
+                ratio = (x - 10) / (canvas_width - 20)
+                new_timestamp = min_val_calc + ratio * (max_val_calc - min_val_calc)
+                new_max = datetime.fromtimestamp(new_timestamp)
+            else:
+                new_max = min_val + ((x - 10) / (canvas_width - 20)) * (max_val - min_val)
             canvas.coords(slider2, x, 10, x, 30)
             update_df_func(slider_id, 'Max', new_max)
             update_label()
@@ -122,8 +167,13 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
         
         # Special handling for datetime display
         if title == "Datetime":
-            min_date = datetime.fromtimestamp(current_min)
-            max_date = datetime.fromtimestamp(current_max)
+            # current_min and current_max are now datetime objects, not timestamps
+            if isinstance(current_min, pd.Timestamp):
+                min_date = current_min.to_pydatetime()
+                max_date = current_max.to_pydatetime()
+            else:
+                min_date = current_min
+                max_date = current_max
             min_var.set(min_date.strftime("%Y-%m-%d %H:%M"))
             max_var.set(max_date.strftime("%Y-%m-%d %H:%M"))
         else:
@@ -134,26 +184,39 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
     def update_from_entry(event=None):
         try:
             if title == "Datetime":
-                # Handle datetime input
-                new_min_date = datetime.strptime(min_var.get(), "%Y-%m-%d %H:%M")
-                new_max_date = datetime.strptime(max_var.get(), "%Y-%m-%d %H:%M")
-                new_min = new_min_date.timestamp()
-                new_max = new_max_date.timestamp()
+                # Handle datetime input - keep as datetime objects, not timestamps
+                new_min = datetime.strptime(min_var.get(), "%Y-%m-%d %H:%M")
+                new_max = datetime.strptime(max_var.get(), "%Y-%m-%d %H:%M")
+                
+                # For slider positioning, we need to convert to timestamps temporarily
+                new_min_ts = new_min.timestamp()
+                new_max_ts = new_max.timestamp()
+                
+                # Check bounds using timestamps
+                if min_val_calc <= new_min_ts <= max_val_calc and new_min_ts <= df_min_max_self.at[slider_id, 'Max'].timestamp():
+                    x_min = 10 + ((new_min_ts - min_val_calc) / (max_val_calc - min_val_calc)) * (canvas_width - 20)
+                    canvas.coords(slider1, x_min, 10, x_min, 30)
+                    update_df_func(slider_id, 'Min', new_min)  # Store datetime object
+
+                if min_val_calc <= new_max_ts <= max_val_calc and new_max_ts >= df_min_max_self.at[slider_id, 'Min'].timestamp():
+                    x_max = 10 + ((new_max_ts - min_val_calc) / (max_val_calc - min_val_calc)) * (canvas_width - 20)
+                    canvas.coords(slider2, x_max, 10, x_max, 30)
+                    update_df_func(slider_id, 'Max', new_max)  # Store datetime object
             else:
                 # Handle numeric input
                 new_min = float(min_var.get())
                 new_max = float(max_var.get())
 
-            # Stellen sicher, dass der Wert innerhalb der Min/Max Grenzen liegt
-            if min_val <= new_min <= max_val and new_min <= df_min_max_self.at[slider_id, 'Max']:
-                x_min = 10 + ((new_min - min_val) / (max_val - min_val)) * (canvas_width - 20)
-                canvas.coords(slider1, x_min, 10, x_min, 30)
-                update_df_func(slider_id, 'Min', new_min)
+                # Stellen sicher, dass der Wert innerhalb der Min/Max Grenzen liegt
+                if min_val <= new_min <= max_val and new_min <= df_min_max_self.at[slider_id, 'Max']:
+                    x_min = 10 + ((new_min - min_val) / (max_val - min_val)) * (canvas_width - 20)
+                    canvas.coords(slider1, x_min, 10, x_min, 30)
+                    update_df_func(slider_id, 'Min', new_min)
 
-            if min_val <= new_max <= max_val and new_max >= df_min_max_self.at[slider_id, 'Min']:
-                x_max = 10 + ((new_max - min_val) / (max_val - min_val)) * (canvas_width - 20)
-                canvas.coords(slider2, x_max, 10, x_max, 30)
-                update_df_func(slider_id, 'Max', new_max)
+                if min_val <= new_max <= max_val and new_max >= df_min_max_self.at[slider_id, 'Min']:
+                    x_max = 10 + ((new_max - min_val) / (max_val - min_val)) * (canvas_width - 20)
+                    canvas.coords(slider2, x_max, 10, x_max, 30)
+                    update_df_func(slider_id, 'Max', new_max)
 
             update_label()
         except ValueError:
@@ -161,8 +224,13 @@ def create_dual_slider(parent, title, min_val, max_val, init_min, init_max, slid
 
     # Variablen für Eingabefelder
     if title == "Datetime":
-        init_min_date = datetime.fromtimestamp(init_min)
-        init_max_date = datetime.fromtimestamp(init_max)
+        # init_min and init_max are now datetime objects, not timestamps
+        if isinstance(init_min, pd.Timestamp):
+            init_min_date = init_min.to_pydatetime()
+            init_max_date = init_max.to_pydatetime()
+        else:
+            init_min_date = init_min
+            init_max_date = init_max
         min_var = tk.StringVar(value=init_min_date.strftime("%Y-%m-%d %H:%M"))
         max_var = tk.StringVar(value=init_max_date.strftime("%Y-%m-%d %H:%M"))
         entry_width = 15
@@ -284,7 +352,7 @@ def schieberegler_main(filter_window, filtered_df, master, cycles):
             # Don't convert here, just check if datetime data exists
             datetime_data = filtered_df['datetime'].dropna()
             if len(datetime_data) > 0:
-                # Convert only for getting min/max timestamps
+                # Convert to timezone-naive datetime objects (treat as local time)
                 datetime_series = pd.to_datetime(datetime_data)
                 min_datetime_raw = datetime_series.min()
                 max_datetime_raw = datetime_series.max()
@@ -298,13 +366,15 @@ def schieberegler_main(filter_window, filtered_df, master, cycles):
                 min_datetime = min_datetime.replace(second=0, microsecond=0)
                 max_datetime = max_datetime.replace(second=0, microsecond=0)
                 
-                min_timestamp = min_datetime.timestamp()
-                max_timestamp = max_datetime.timestamp()
+                # Store datetime objects directly instead of timestamps to avoid timezone conversion
+                # We'll convert to string format for comparison later
+                #min_timestamp = min_datetime  # Keep as datetime object
+                #max_timestamp = max_datetime  # Keep as datetime object
                 
                 # Datetime als ersten Parameter hinzufügen
                 parameters.insert(0, "Datetime")
-                min_values.insert(0, min_timestamp)
-                max_values.insert(0, max_timestamp)
+                min_values.insert(0, min_datetime)
+                max_values.insert(0, max_datetime)
                 print(f"Added datetime filter with wide bounds: {min_datetime} to {max_datetime}")
                 print(f"Original data range: {min_datetime_raw} to {max_datetime_raw}")
         except Exception as e:
@@ -354,20 +424,32 @@ def main_filter(df_default_werte, master):
     datetime_row = df_min_max_self[df_min_max_self["Parameter"] == "Datetime"]
     if not datetime_row.empty and 'datetime' in filtered_df.columns:
         try:
-            # Get datetime filter values (timestamps) and convert to datetime strings with hours/minutes
-            min_timestamp = datetime_row["Min"].values[0]
-            max_timestamp = datetime_row["Max"].values[0]
-            min_date_str = datetime.fromtimestamp(min_timestamp).strftime('%Y-%m-%d %H:%M')
-            max_date_str = datetime.fromtimestamp(max_timestamp).strftime('%Y-%m-%d %H:%M')
+            # Get datetime filter values (already datetime objects)
+            min_filter_dt = datetime_row["Min"].values[0]
+            max_filter_dt = datetime_row["Max"].values[0]
             
-            print(f"Datetime filter range: {min_date_str} to {max_date_str}")
+            # Convert pd.Timestamp to datetime if needed
+            if isinstance(min_filter_dt, pd.Timestamp):
+                min_filter_dt = min_filter_dt.to_pydatetime()
+                max_filter_dt = max_filter_dt.to_pydatetime()
+            
+            print(f"Datetime filter range: {min_filter_dt.strftime('%Y-%m-%d %H:%M')} to {max_filter_dt.strftime('%Y-%m-%d %H:%M')}")
             
             original_count = len(filtered_df)
-            # String comparison with hour:minute precision
+            
+            # Parse data datetime strings and filter using proper datetime comparison
+            filtered_df['datetime_parsed'] = filtered_df['datetime'].apply(parse_datetime_safe)
+            filtered_df = filtered_df[filtered_df['datetime_parsed'].notna()]  # Remove unparseable dates
+            
+            # Filter using datetime objects (proper semantic comparison)
             filtered_df = filtered_df[
-                (filtered_df['datetime'] >= min_date_str) & 
-                (filtered_df['datetime'] <= max_date_str)
+                (filtered_df['datetime_parsed'] >= min_filter_dt) & 
+                (filtered_df['datetime_parsed'] <= max_filter_dt)
             ]
+            
+            # Clean up temporary column
+            filtered_df = filtered_df.drop(columns=['datetime_parsed'])
+            
             print(f"Datetime filter applied: {original_count} -> {len(filtered_df)} rows")
             
         except Exception as e:
