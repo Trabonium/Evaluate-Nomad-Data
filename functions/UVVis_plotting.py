@@ -81,10 +81,11 @@ def find_peaks_and_fit_gaussian(x, y):
         return results
 
 def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
+    #alpha = 1/d * ln( (1-R)^2 / T )
     thickness_nm = 550  # Schichtdicke in nm
 
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_UVVis)
+    from functions.plot_style import set_plot_style_UVVis
+    set_plot_style_UVVis(Latex_UVVis)
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
@@ -114,14 +115,15 @@ def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
             df["energy_ev"] = 1239.841984 / df["wavelength"]
             df.sort_values("energy_ev", inplace=True)
 
-            alpha = df['absorption'] / thickness_nm
-            df['tauc'] = (alpha * df['energy_ev']) ** 2
+            df['alpha'] = 1 / thickness_nm * np.log((1-df["reflection"]) ** 2 / df["transmission"])
+            df['tauc'] = (df['alpha'] * df['energy_ev']) ** 2
 
             # Glättung
             x = df['energy_ev'].values
             y = df['tauc'].values
             y_smooth = savgol_filter(y, 51, 3)
-
+            
+            '''
             # Erste Ableitung
             dy = np.diff(y_smooth)
             dx = np.diff(x)
@@ -145,17 +147,18 @@ def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
             slope = fit_result["slope"]
             intercept = fit_result["intercept"]
             bandgap = round(fit_result["bandgap"], 2)
+            '''
 
             # Plotten
             color = colors[idx]
-            label = f"{data['variation'][i]} (Eg = {bandgap} eV)"
+            #label = f"{data['variation'][i]} (Eg = {bandgap} eV)"
 
-            ax.plot(x, y, '-', color=color, alpha=0.5)
-            ax.plot(x_fit, y_fit, '-', color=color)
-            x_line = np.linspace(bandgap, x[max_index], 100)
-            y_line = slope * x_line + intercept
-            ax.plot(x_line, y_line, '--', color=color, linewidth=2, label=label)
-            ax.scatter([bandgap], [0], color=color, zorder=5)
+            ax.plot(x, y, '-', color=color, alpha=0.5, label = f"{data['variation'][i]}")
+            #ax.plot(x_fit, y_fit, '-', color=color)
+            #x_line = np.linspace(bandgap, x[max_index], 100)
+            #y_line = slope * x_line + intercept
+            #ax.plot(x_line, y_line, '--', color=color, linewidth=2, label=label)
+            #ax.scatter([bandgap], [0], color=color, zorder=5)
 
         except Exception as e:
             print(f"Error with sample {data['sample_id'][i]}: {e}")
@@ -176,8 +179,8 @@ def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
 
 def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
     # === Plot-Setup ===
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_UVVis)
+    from functions.plot_style import set_plot_style_UVVis
+    set_plot_style_UVVis(Latex_UVVis)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -265,8 +268,8 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
 
 def plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis):
     # === Plot-Setup ===
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_UVVis)
+    from functions.plot_style import set_plot_style_UVVis
+    set_plot_style_UVVis(Latex_UVVis)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
