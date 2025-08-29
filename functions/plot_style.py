@@ -62,4 +62,34 @@ def set_plot_style_UVVis(use_latex: bool = False):
             "lines.linewidth": 1.5,
             "figure.dpi": 800,
         })
+
+def set_ppt_style(use_latex: bool = True):
+    if use_latex:
+        mpl.rcParams.update({
+            "text.usetex": True,
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Helvetica"],  # or "Arial"
+            "axes.labelsize": 22,
+            "axes.titlesize": 24,
+            "xtick.labelsize": 20,
+            "ytick.labelsize": 20,
+            "legend.fontsize": 20,
+            "lines.linewidth": 2,
+            "figure.dpi": 300,   # high enough for slides
+        })
+    else:
+        mpl.rcParams.update({
+            "text.usetex": False,
+            "mathtext.fontset": "stixsans",  # clean sans-serif math style
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Helvetica"],  # or "Arial"
+            "axes.labelsize": 22,
+            "axes.titlesize": 24,
+            "xtick.labelsize": 20,
+            "ytick.labelsize": 20,
+            "legend.fontsize": 20,
+            "lines.linewidth": 2,
+            "figure.dpi": 300,
+        })
+
         

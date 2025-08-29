@@ -8,6 +8,7 @@
 
 
 ## Features
+- plot style for PPPs
 
 ### GUI
 - Rework tauc plot --> scheisse at all
