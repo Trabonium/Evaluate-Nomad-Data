@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from tkinterdnd2 import DND_FILES, TkinterDnD #drag and drop window
 import requests
 import pandas as pd 
 import os, sys
+import numpy as np
 
-if not getattr(sys, 'frozen', False):  # nur im Entwicklungskontext
+if not getattr(sys, 'frozen', False):  #only import in development environment
     from kedro.config import OmegaConfigLoader
     from kedro.framework.project import settings
 
@@ -20,6 +22,7 @@ from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
+from functions.UVVis_plotting import UVVis_plotting     
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
@@ -36,6 +39,7 @@ current_frame_index = 0
 # Globale Variablen
 selected_file_path = None
 data = None
+filtered_data = None
 stats = None
 best = None
 token = None
@@ -43,6 +47,7 @@ directory = None
 file_name = None
 filter_cycle_boolean = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
+uvvis_unit_mode = "wavelength" # default for UVVis plotting
 
 
 def show_auto_close_message(title, message, timeout=3000):
@@ -81,19 +86,38 @@ def select_file():
         selected_file_path = filedialog.askopenfilename(title="Choose Excel-file", filetypes=[("Excel-Dateien", "*.xlsx")])
         file_path_label.config(text=f"Chosen data: {selected_file_path}" if selected_file_path else "No data chosen")
     run_with_spinner(task_select_file)
+
+#drag and drop select file function
+def handle_drop(event):
+    global selected_file_path
+    path = event.data.strip('{}')  # Bei Leerzeichen im Pfad
+    if path.endswith('.xlsx'):
+        selected_file_path = path
+        file_path_label.config(text=f"Chosen data: {selected_file_path}")
+    else:
+        file_path_label.config(text="❌ Not an Excel file!")
+
     
 def load_data():
     def task_load_data():
-        global data
+        global data, filtered_data, filter_cycle_boolean
         if not selected_file_path:
             messagebox.showerror("Error", "Please choose Excel first.")
             return
         try:
+            #columns to check for 'nan' strings, that are not interpreted as NaN
+            cols = ["efficiency", "fill_factor", "open_circuit_voltage", "short_circuit_current_density"]
             data = get_data_excel_to_df(selected_file_path, nomad_url, token)
-            #print(data)
-            #print(data.columns)
+            data[cols] = data[cols].replace('nan', np.nan)
+            
+            #reset values for new loaded data
+            filtered_data = None
+            filter_cycle_boolean = None
         except Exception as e:
-            root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
+            try:
+                root.after(0, lambda : messagebox.showerror("Error", f"Data could not be loaded: {e}"))
+            except: 
+                root.after(0, lambda : messagebox.showerror("Error", "Data could not be loaded."))
     run_with_spinner(task_load_data)
 
 # Daten filtern
@@ -119,59 +143,92 @@ def calculate_stats():
             messagebox.showerror("Error", "Please load data first!")
             return
         try:
-            stats, best = calculate_statistics(filtered_data if 'filtered_data' in globals() else data)
+            stats, best = calculate_statistics(filtered_data if filtered_data is not None else data)
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"Calculate statistics gone wrong: {e}"))
     run_with_spinner(task_calculate_stats)
 
 # CSV-Export-Funktionen
 def csv_raw_export():
-    if data is None:
-        messagebox.showerror("Error", "Please load data first!")
-        return
-    path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
-    if path:
-        generate_csv_raw_file(path, data)
-        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
+    def task_csv_raw_export():
+        if data is None:
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load data first!: {e}"))
+            return
+        else:
+            path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+            if path:
+                generate_csv_raw_file(path, data)
+    run_with_spinner(task_csv_raw_export)
 
 def csv_filtered_export():
-    if 'filtered_data' not in globals():
-        messagebox.showerror("Error", "Please filter data first!")
-        return
-    path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
-    if path:
-        generate_csv_filtered_file(path, filtered_data, data, None)
-        show_auto_close_message("Success", f"CSV file saved: {path}", 2000)
+    def task_csv_filtered_export():
+        if filtered_data is None:
+            root.after(0, lambda : messagebox.showerror("Error", f"Please filter data first!: {e}"))
+            return
+        else:
+            path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+            if path:
+                generate_csv_filtered_file(path, filtered_data, data, None)
+    run_with_spinner(task_csv_filtered_export)
 
 def free_filter_for_halfstacks():
-    global filtered_data, data
-    if data is None:
-        messagebox.showerror("Error", "Please load your data first!")
-        return
-    try:
-        filtered_data = freier_filter(data, master=root)
+    def task_free_filter_for_halfstacks():
+        global filtered_data, data
+        if data is None:
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
+            return
+        try:
+            filtered_data = freier_filter(data, master=root)
 
-        #ausgabe der gefilterten daten
-        #common_cols = list(data.columns.intersection(filtered_data.columns))
-        #df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
-        #df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
-        #print(df_A_only)
+            #ausgabe der gefilterten daten
+            #common_cols = list(data.columns.intersection(filtered_data.columns))
+            #df_diff = data.merge(filtered_data, on=common_cols, how='left', indicator=True)
+            #df_A_only = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
+            #print(df_A_only)
 
-        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
-        show_auto_close_message("Success", "Data filtered!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"Filtering gone wrong: {e}")
+            canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # Für Windows
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Filtering gone wrong: {e}"))
+    run_with_spinner(task_free_filter_for_halfstacks)
 
 def UVVis_plotting_function():
-    global filtered_data
-    if filtered_data is None:
-        messagebox.showerror("Error", "Please load your data first!")
-        return
-    try:
-        #UVVis_plotting(filtered_data, master=root)
-        show_auto_close_message("Success", "UVVis plotting done!", 2000)
-    except Exception as e:
-        messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}")
+    def task_UVVis_plotting_function():
+        global filtered_data, data, nomad_url, token, uvvis_unit_mode
+        Latex_UVVis = latex_var.get()
+        #check if data is loaded
+        if data is None:
+            root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
+            return
+        #get place to save the plot
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".svg",
+            filetypes=[("SVG files", "*.svg")]
+        )
+        #check if user has chosen a file
+        if not file_path:
+            return
+
+        #data_to_plot = data if filtered_data is None else filtered_data
+        data_to_plot = filtered_data if filtered_data is not None else data
+
+        try:
+            UVVis_plotting(data_to_plot, file_path, Latex_UVVis, nomad_url, token, unit = uvvis_unit_mode)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}"))
+    run_with_spinner(task_UVVis_plotting_function)
+
+def toggle_uvvis_unit():
+    global uvvis_unit_mode
+    if uvvis_unit_mode == "wavelength":
+        uvvis_unit_mode = "photon_energy"
+        uvvis_toggle_button.config(text="photon energy [eV]")
+    elif uvvis_unit_mode == "photon_energy":
+        uvvis_unit_mode = "tauc_plot"
+        uvvis_toggle_button.config(text="Tauc plot (for 550 nm thickness)")
+    else:  
+        uvvis_unit_mode = "wavelength"
+        uvvis_toggle_button.config(text="wavelength [nm]")
+
 
 def merge_UVVis_files():
     def task_merge_UVVis_files():
@@ -239,6 +296,7 @@ def generate_report():
             "MPP": mpp_var.get(),
             "Table": table_var.get(), 
             "Picture": picture_var.get(),
+            "Latex": latex_var.get(),
         }
 
         file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
@@ -289,12 +347,12 @@ def toggle_plot_options():
         plot_options_frame.grid_remove()  # Nur das Frame verstecken
         toggle_button.config(text="▶ Show Plot Options")  # Button bleibt sichtbar
     else:
-        plot_options_frame.grid(row=14, column=0, pady=5, sticky="n")  # Wieder anzeigen
+        plot_options_frame.grid(row=15, column=0, pady=5, sticky="n")  # Wieder anzeigen
         toggle_button.config(text="▼ Hide Plot Options")
 
 
 # Hauptfenster erstellen
-root = tk.Tk()
+root = TkinterDnD.Tk()
 root.title("Script for NOMAD data evaluation")
 root.geometry("600x600")
 #root.iconbitmap(os.path.join(os.path.dirname(__file__), "GUI.ico"))
@@ -420,14 +478,13 @@ password_help.bind("<Leave>", hide_tooltip)
 # Buttons mit tatsächlichen Funktionsaufrufen
 buttons_info1 = [ #buttons für die kopfzeile
     ("Login", login_handler, "Click here to log in to the NOMAD oasis."),
-    ("Select File", select_file, "Choose Excel file to download your wanted data. If you need data from multiple batches, merge your experimental Planning excel files - but DO NOT UPLOAD TO NOMAD TWICE!"),
     ("Load corresponding Data from NOMAD OASIS", load_data, "Download data with the choosen Excel file.")
 ]
 
 row_index = 3
 for text, command, tooltip in buttons_info1:
-    if row_index == 5:
-        row_index += 1
+    if row_index == 4:
+        row_index += 2
     btn = ttk.Button(scrollable_frame, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
     apply_hover_effect(btn, "TButton", "Hover.TButton")
@@ -438,6 +495,32 @@ for text, command, tooltip in buttons_info1:
     help_label.bind("<Leave>", hide_tooltip)
     
     row_index += 1
+
+# Zeile im Grid für Button + Dropfeld
+row_index = 4  # z. B. anpassen, je nachdem wo du bist
+
+# Frame für Button + Drag-Drop
+file_frame = ttk.Frame(scrollable_frame)
+file_frame.grid(row=4, column=0, columnspan=2, pady=5, sticky="n")
+
+# Button
+select_button = ttk.Button(file_frame, text="Select File", command=select_file)
+select_button.grid(row=0, column=0, padx=(0, 10))
+
+drop_label = ttk.Label(file_frame, text="⬇️ Drag & Drop Excel file", relief="ridge", padding=5)
+drop_label.grid(row=0, column=1)
+
+apply_hover_effect(select_button, "TButton", "Hover.TButton")
+
+# Drop-Ziel registrieren
+drop_label.drop_target_register(DND_FILES)
+drop_label.dnd_bind('<<Drop>>', handle_drop)
+
+# Hilfe-Icon separat rechts
+file_help = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
+file_help.grid(row=row_index, column=1, padx=5)
+file_help.bind("<Enter>", lambda e: show_tooltip(e, "Choose Excel file or drag it here."))
+file_help.bind("<Leave>", hide_tooltip)
 
 
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
@@ -509,7 +592,8 @@ hysteresis = tk.BooleanVar(value=False)
 eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
-picture_var = tk.BooleanVar(value=True)
+picture_var = tk.BooleanVar(value=False)
+latex_var = tk.BooleanVar(value=False)
 
 # Checkboxen
 plot_options = [
@@ -517,10 +601,11 @@ plot_options = [
     ("Box + Scatter Plots", box_var, "Plots the box and scatter plots for your batch statistics."),
     ("Separate Backwards/Forwards", separate_scan_var, "Adds the reverse and forwards differentiation to your box and scatter plots."),
     ("Hysteresis plot", hysteresis, "Plots the hysteresis as a box + scatter plot."),
-    ("EQE Curves", eqe_var, "Plot EQE data."),
-    ("MPP Curves", mpp_var, "Plots the MPP tracking."),
+    ("EQE Curves", eqe_var, "Plot EQE data - of the best availabe sample for each variation"),
+    ("MPP Curves", mpp_var, "Plots the MPP tracking - of the best availabe sample for each variation"),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
-    ("Generate pictures", picture_var, "Generates extra pictures of the plots.")
+    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report."),
+    ("Latex text", latex_var, "Renders the text in the plots in LaTeX format (you need a LaTeX distribution installed).")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):
@@ -534,10 +619,21 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
 
 buttons_info3 = [ #buttons für frame 2
     ("Halfstack filter", free_filter_for_halfstacks, "Filter your data for halfstacks if wished (optional and repeatable)."), 
-    ("UVVis plotting", None, "Plot your UVVis data with the band gaps."),
+    ("UVVis plotting", UVVis_plotting_function, "Plot your UVVis data with the band gaps."),
 ]
 
-row_index = 1
+uvvis_toggle_button = ttk.Button(frame2, text="wavelength [nm]", command=toggle_uvvis_unit)
+uvvis_toggle_button.grid(row=row_index+2, column=0, pady=5, sticky="w")
+
+# Optional: Tooltip & Hover
+apply_hover_effect(uvvis_toggle_button, "TButton", "Hover.TButton")
+help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
+help_label.grid(row=row_index, column=1, padx=5)
+help_label.bind("<Enter>", lambda e: show_tooltip(e, "Toggle between wavelength [nm] and photon energy [eV]."))
+help_label.bind("<Leave>", hide_tooltip)
+
+row_index += 1
+
 for text, command, tooltip in buttons_info3:
     btn = ttk.Button(frame2, text=text, command=command)
     btn.grid(row=row_index, column=0, pady=5)
@@ -555,7 +651,7 @@ buttons_info4 = [ #buttons für frame 3
     ("Old data renaming", Rename_folders_and_measurements, "Rename your folders and measurements."),
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
-    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format."), 
+    ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format. Adds .jv to the end of the filename and changes the cycle and pixel info to be read properly"), 
     ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
 ]
 
@@ -574,7 +670,7 @@ for text, command, tooltip in buttons_info4:
 
 #load credentials from credentials.yml in kedro conf
 #if you are unsure how to use this, read the top-level readme in Bayesian_Optimization
-if not getattr(sys, 'frozen', False):  # nur im Entwicklermodus
+if not getattr(sys, 'frozen', False):  #only import in development environment
     try:
         path_to_credentials = os.path.dirname(os.path.abspath(sys.argv[0])) + "\\Bayesian_Optimization\\bayesian-optimization\\conf"
         conf_loader = OmegaConfigLoader(conf_source=path_to_credentials)
@@ -582,7 +678,7 @@ if not getattr(sys, 'frozen', False):  # nur im Entwicklermodus
         if 'nomad_db' in credentials:
             username_entry.insert(0, credentials['nomad_db']['username'])
             password_entry.insert(0, credentials['nomad_db']['password'])
-            show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
+            #show_auto_close_message('Credentials loaded!', 'Credentials loaded from file.\nYou still need to press Login')
     except Exception as e:
         print(f"Credentials konnten nicht geladen werden: {e}")
 

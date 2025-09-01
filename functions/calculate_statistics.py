@@ -45,8 +45,8 @@ def calculate_statistics(df: pd.DataFrame):
         'FF',
         'Jsc'
     ])
-
-    for category in sorted(df['variation'].unique()):
+    
+    for category in pd.unique(df['variation']):
         category_data = df[df['variation'] == category]
 
         if category_data.empty or category_data['efficiency'].dropna().empty:

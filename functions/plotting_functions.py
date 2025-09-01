@@ -12,7 +12,10 @@ from functions.api_calls_get_data import get_specific_data_of_sample
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
-def plot_JV_curves(result_df, curve_type, nomad_url, token):
+def plot_JV_curves(result_df, curve_type, nomad_url, token, Latex_bool):
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_bool)
+
     fig, ax = plt.subplots()
     
     # Define a color palette for the groups
@@ -27,16 +30,25 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
         found_curve = False  # Flag to stop both loops
         for cell in jv_data:
             for i in range(2):
-                PCE = cell["jv_curve"][i]["efficiency"]
-                if cell["jv_curve"][i]["efficiency"] == row[f'{curve_type}'] and \
+                try:
+                    PCE = cell["jv_curve"][i]["efficiency"]
+                    if PCE == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
-                        ax.plot(cell["jv_curve"][i]["voltage"], \
-                                 cell["jv_curve"][i]["current_density"], \
-                                 label=f"{row['category']}: {round(PCE,2)}%")
+                        if Latex_bool:
+                            ax.plot(cell["jv_curve"][i]["voltage"], \
+                                    cell["jv_curve"][i]["current_density"], \
+                                    label=fr"{row['category']}: {round(PCE,2)}\%")
+                        else:
+                            ax.plot(cell["jv_curve"][i]["voltage"], \
+                                    cell["jv_curve"][i]["current_density"], \
+                                    label=f"{row['category']}: {round(PCE,2)}%")
                         if max_Voc < max(cell["jv_curve"][i]["voltage"]):
                             max_Voc = max(cell["jv_curve"][i]["voltage"])
                         found_curve = True
                         break
+                except:
+                    continue
+                
             if found_curve: #Stops plotting duplicates in the same configuration
                 break 
 
@@ -47,16 +59,15 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
     else:   
         ax.set_xlim(-0.2, ((math.ceil(max_Voc * 10))/10) + 0.1) 
     ax.set_ylim(-5, 25)
-    #ax.set_title(f'{curve_type.capitalize()} JV Curves', fontsize=16)
-    ax.set_xlabel('Voltage (V)', fontsize=12)
+    ax.set_xlabel('Voltage (V)')
     if curve_type == 'maximum_efficiency':
-        ax.set_ylabel('(Best) Current Density (mA/cm²)', fontsize=12)
+        ax.set_ylabel('(Best) Current Density (mA/cm²)')
     else:
-        ax.set_ylabel('(Median) Current Density (mA/cm²)', fontsize=12)
+        ax.set_ylabel('(Median) Current Density (mA/cm²)')
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
-    ax.tick_params(labelsize=12)
+ 
     ax.spines['top'].set_linewidth(2)
     ax.spines['bottom'].set_linewidth(2)
     ax.spines['left'].set_linewidth(2)
@@ -72,7 +83,10 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
-def plot_EQE_curves(df, result_df, nomad_url, token):
+def plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool):
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_bool)
+
     max_EQE = .0
     wellenlenge_min = np.inf
     wellenlenge_max = .0
@@ -124,13 +138,16 @@ def plot_EQE_curves(df, result_df, nomad_url, token):
     ax.set_ylim(0, max(yticks))
     ax.legend()
     ax.set_xlim(wellenlenge_min-20, wellenlenge_max+20)
-    ax.set_title(f'EQE Curves', fontsize=16)
-    ax.set_xlabel('Wavelength (nm)', fontsize=12)
-    ax.set_ylabel('EQE (%)', fontsize=12)
+    ax.set_title(f'EQE Curves')
+    ax.set_xlabel('Wavelength (nm)')
+    if Latex_bool:
+        ax.set_ylabel(r'EQE (\%)')
+    else:
+        ax.set_ylabel('EQE (%)')
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
-    ax.tick_params(labelsize=12)
+    
     ax.spines['top'].set_linewidth(2)
     ax.spines['bottom'].set_linewidth(2)
     ax.spines['left'].set_linewidth(2)
@@ -147,7 +164,9 @@ def plot_EQE_curves(df, result_df, nomad_url, token):
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
-def plot_MPP_curves(df, result_df, nomad_url, token):
+def plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool):
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_bool)
     
     fig, ax = plt.subplots()
     
@@ -192,13 +211,16 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
     ax.legend()
     ax.set_xlim(0, 300)
     ax.set_ylim(0, 25)
-    ax.set_title(f'MPP Tracking', fontsize=16)
-    ax.set_xlabel('Time (s)', fontsize=12)
-    ax.set_ylabel('PCE (%)', fontsize=12)
+    ax.set_title(f'MPP Tracking')
+    ax.set_xlabel('Time (s)')
+    if Latex_bool:
+        ax.set_ylabel(r'PCE (\%)')
+    else:
+        ax.set_ylabel('PCE (%)')
 
     # Axis ticks and borders
     ax.tick_params(axis='both', which='both', direction='in', width=2, bottom=1, top=1, left=1, right=1)
-    ax.tick_params(labelsize=12)
+
     ax.spines['top'].set_linewidth(2)
     ax.spines['bottom'].set_linewidth(2)
     ax.spines['left'].set_linewidth(2)
@@ -215,8 +237,10 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], SeparateScanDir=False):
-    print("boolean: ", filter_cycle_boolean)
+def plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, quantity=['variation'], SeparateScanDir=False):
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_bool)
+    
     # Define the base color palette for unique variations
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df[quantity].unique())))
 
@@ -234,8 +258,8 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
         # Use only the base color palette
         colors = base_colors
 
-    # Sort the unique variation groups first to ensure consistent order
-    sorted_variations = sorted(df[quantity].unique())
+    # take original order
+    sorted_variations = pd.unique(df[quantity])
     if SeparateScanDir:
         sorted_groups = [
             f"{group}_bw" if i % 2 == 0 else f"{group}_fw"
@@ -247,13 +271,20 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
 
     # Define Y-Axis Labels
     jv_quantity = ['efficiency', 'open_circuit_voltage', 'fill_factor', 'short_circuit_current_density']
-    
-    jv_quantity_labels = {
+    if Latex_bool: 
+        jv_quantity_labels = {
         'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
         'fill_factor': "FF",
-        'efficiency': "PCE (%)",
+        'efficiency': r"PCE (\%)",
         'short_circuit_current_density': r"$\mathrm{J_{sc} \, (mA/cm²)}$"
     }
+    else:
+        jv_quantity_labels = {
+            'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
+            'fill_factor': "FF",
+            'efficiency': "PCE (%)",
+            'short_circuit_current_density': r"$\mathrm{J_{sc} \, (mA/cm²)}$"
+        }
 
     #Define markers for different cycles
     scatter_cycle_marker = {
@@ -405,7 +436,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
         ax.set_xticks([i + 1 for i in range(len(sorted_variations))])
         ax.set_xticklabels(sorted_variations, size=14, rotation=45 if len(sorted_variations) > 4 else 0, ha='right' if len(sorted_variations) > 4 else 'center')
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10])) 
-        ax.tick_params(axis='both', labelsize=14)
+        ax.tick_params(axis='both')
         ax.grid(axis='y', color='grey', linestyle='--', linewidth=0.5, alpha=0.5) 
 
         # Border line and Ticks Formatting
@@ -427,7 +458,10 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
     return fig
 
 #hysteresis plot function
-def plot_hysteresis(df): #quantity is here default 'variation'
+def plot_hysteresis(df, Latex_bool): #quantity is here default 'variation'
+    from functions.plot_style import set_plot_style
+    set_plot_style(Latex_bool)
+
     # Berechnung der Quotienten für jede Variation
     quotient_data = []
     for i, variation in enumerate(df['variation'].unique()):
@@ -445,8 +479,8 @@ def plot_hysteresis(df): #quantity is here default 'variation'
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df_quotient['variation'].unique())))
     colors = base_colors
 
-    # Sortiere die Variationen
-    sorted_variations = sorted(df_quotient['variation'].unique())
+    #original order
+    sorted_variations = pd.unique(df_quotient['variation'])
 
     # Boxplot-Setup
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -479,7 +513,7 @@ def plot_hysteresis(df): #quantity is here default 'variation'
     ax.set_xticks(positions)
     ax.set_xticklabels(sorted_variations, size=14)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10])) 
-    ax.tick_params(axis='both', labelsize=14)
+    ax.tick_params(axis='both')
     ax.grid(axis='y', color='grey', linestyle='--', linewidth=0.5, alpha=0.5) 
 
     # Rahmen & Achsenticks formatieren

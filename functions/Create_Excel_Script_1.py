@@ -126,9 +126,36 @@ class ExperimentExcelBuilder:
             elif process_name == "Inkjet Printing": 
                 steps.extend(["Printhead name", "Printing run", "Number of active nozzles", "Droplet density [dpi]", "Quality factor", "Step size", 
                               "Printing direction", "Printed area [mm²]", "Droplet per second [1/s]", "Droplet volume [pL]", "Dropping Height [mm]",
-                              "wave function parameters 1", "wave function parameters 2", "wave function parameters 3", "wave function parameters 4",
-                              "Ink reservoir pressure [bar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
+                              "Ink reservoir pressure [mbar]", "Table temperature [°C]", "Nozzle temperature [°C]", "Room temperature [°C]", "rel. humidity [%]" 
                               ]) 
+                pixORnotion = config.get("pixORnotion", "Pixdro")  # Default to Pixdro if not specified
+                if pixORnotion == "Pixdro":
+                    steps.extend(['Wf Number of Pulses'])
+                    for N_Pulse in range(1, config.get("Wf Number of Pulses", 1) + 1):
+                            steps.extend([
+                                f'Wf Level {N_Pulse}[V]', f'Wf Rise {N_Pulse}[V/us]', f'Wf Width {N_Pulse}[us]',
+                                f'Wf Fall {N_Pulse}[V/us]', f'Wf Space {N_Pulse}[us]'
+                            ])
+                
+                if pixORnotion == "Notion": 
+                    steps.extend(['Wf Number of Pulses', 
+                              'Wf Delay Time [us]', 
+                              'Wf Rise Time [us]',
+                              'Wf Hold Time [us]',
+                              'Wf Fall Time [us]',
+                              'Wf Relax Time [us]',
+                              'Wf Voltage [V]',
+                              'Wf Number Greylevels',
+                              'Wf Grey Level 0 Use Pulse [1/0]',
+                              'Wf Grey Level 1 Use Pulse [1/0]'])                
+                
+                if config.get("gasquenching", False):
+                    steps.extend(["Gas", "Gas quenching start time [s]", "Gas quenching duration [s]", "Gas quenching flow rate [ml/s]", "Gas quenching pressure [bar]",
+                                  "Gas quenching velocity [m/s]", "Gas quenching height [mm]", "Nozzle shape", "Nozzle size [mm²]"])  
+                    
+                if config.get("vacuumquenching", False):
+                    steps.extend(["Vacuum quenching start time [s]", "Vacuum quenching duration [s]", "Vacuum quenching pressure [bar]"
+                                    ])  
             
             # Add annealing steps
             steps.extend(["Annealing time [min]", "Annealing temperature [°C]",
@@ -184,11 +211,11 @@ process_config = {
     "Dip Coating": {"solvents": 1, "solutes": 1}, 
     "Spin Coating": {"solvents": 1, "solutes": 1, "spinsteps": 1, "antisolvent": False, "gasquenching": 0, "vacuumquenching": 0}, 
     "Slot Die Coating": {"solvents": 1, "solutes": 1},  
-    "Inkjet Printing": {"solvents": 1, "solutes": 1},  
+    "Inkjet Printing": {"solvents": 1, "solutes": 1, "pixORnotion": "Pixdro", "Wf Number of Pulses":1 , "vacuumquenching": 0, "gasquenching": 0}, #ToDo Extend Pulse variations 
 
     "Evaporation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Base pressure [bar]", "Pressure start [bar]", "Pressure end [bar]",
                               "Source temperature start[°C]", "Source temperature end[°C]", "Substrate temperature [°C]", "Thickness [nm]",
-                              "Rate [angstrom/s]", "Tooling factor", "Notes"]},  
+                              "Rate [angstrom/s]", "Power [%]", "Tooling factor", "Notes"]},  
     # Added DB 2024-11-29  multiple materials #Could also be called Co-Sublimation instead of Co-Evaporation
     "Co-Evaporation": {"materials": 2},
     # Added DB 2024-11-29  multiple materials #Could also be called Seq-Sublimation instead of Seq-Evaporation
@@ -196,6 +223,11 @@ process_config = {
     "Close Space Sublimation": {"steps": ["Material name", "Layer type", "Tool/GB name", "Organic", "Process pressure [bar]",
                               "Source temperature [°C]", "Substrate temperature [°C]", "Material state", "Substrate source distance [mm]",
                               "Thickness [nm]", "Deposition Time [s]", "Carrier gas", "Notes"]},
+
+    "Lamination": {"steps": ["Interface", "Tool/GB name", "Temperature during process[°C]",  "Temperature at pressure relief [°C]", "Pressure [MPa]", "Force [N]",  
+                             "Time lamination [s]", "Heat up time [s]", "Cool down time [s]", "Total time [s]", "Athmosphere in chamber", "Humidity [%%rel]",
+                             "Stamp 1 Material", "Stamp 1 Thickness [mm]", "Stamp 1 Area [mm^2]", "Stamp 2 Material", "Stamp 2 Thickness [mm]", "Stamp 2 Area [mm^2]",
+                             "Homogeniously pressed [1/0]", "Sucessful adhesion [1/0]", "Notes"]},
 
     "Sputtering": {"steps": ["Material name", "Layer type", "Tool/GB name", "Gas", "Temperature [°C]", "Pressure [mbar]",
                              "Deposition time [s]", "Burn in time [s]", "Power [W]", "Rotation rate [rpm]",

@@ -30,7 +30,7 @@ def tandem_puri_jv_split(master):
 
     def format_old_file(sample_name, area, is_illuminated, date, scan1, scan2):
         header = [
-            f"LTI @ KIT\tPV cell J-V measurement\t\t",
+            f"LTI @ KIT\tPV cell J-V measurement - measured by Puri \t\t",
             f"Cell ID:\t{sample_name}\t\t",
             f"Cell area [cm²]:\t{area}\t\t",
             f"Cell illuminated\t{int(is_illuminated)}\t\t",
@@ -84,7 +84,7 @@ def tandem_puri_jv_split(master):
             reverse = parse_scan(reverse_lines)
 
             scan_index = idx // 2 + 1
-            filename = f"{sample_name}_px{scan_index}.csv"
+            filename = f"{sample_name}.px{scan_index}.jv.csv"
             output_path = os.path.join(output_folder, filename)
 
             content = format_old_file(sample_name, area, is_illuminated, date, forward, reverse)
