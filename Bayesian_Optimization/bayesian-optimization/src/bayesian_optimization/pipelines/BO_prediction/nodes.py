@@ -39,9 +39,9 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
         response = requests.get(f"{nomad_url}/auth/token", params={"username": nomad_user, "password": nomad_pw})
         response.raise_for_status()
         token = response.json().get('access_token', None)
-        print("Login successful.", f"Logged in as {nomad_user}")
+        logger.info(f"Login successful. Logged in as {nomad_user}")
     except requests.exceptions.RequestException as e:
-        print("Login Failed", f"Error: {e}")
+        logger.error(f"Login Failed. Error: {e}")
         exit
     
     #drop any lines where Nomad ID is not set
@@ -299,12 +299,12 @@ def make_prediction(data: pd.DataFrame):
     #optimizer focused on exploitation: Mostly looks for highest improvement
     acq_fn_exploitation = acquisition.ExpectedImprovement(xi=0.0, random_state=1)
     optimizer_exploitation = BayesianOptimization(f=None, acquisition_function=acq_fn_exploitation, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
-    optimizer_exploitation.set_gp_params(alpha=1e-4)
+    optimizer_exploitation.set_gp_params(alpha=1e-2)
 
     #second optimizer focused on exploration
     acq_fn_exploration = acquisition.ExpectedImprovement(xi=0.1, random_state=1)
     optimizer_exploration = BayesianOptimization(f=None, acquisition_function=acq_fn_exploration, pbounds=trivial_normalized_bounds, verbose=2, random_state=1, allow_duplicate_points=True)
-    optimizer_exploration.set_gp_params(alpha=1e-4)
+    optimizer_exploration.set_gp_params(alpha=1e-2)
     
     for index, row in data.iterrows():
         parameters = {
@@ -388,6 +388,10 @@ def visualize(optimizer: BayesianOptimization):
     gs = mpl.gridspec.GridSpec(2,6, figure=fig, wspace=0.01, hspace=0.05)
     keys = optimizer._space.keys  
 
+    tick_positions = np.arange(6)
+    ylabels = [round(BOUNDS[keys[1]][0] + (BOUNDS[keys[1]][1] - BOUNDS[keys[1]][0]) * (n/5),1) for n in range(6)]
+    xlabels = [round(BOUNDS[keys[2]][0] + (BOUNDS[keys[2]][1] - BOUNDS[keys[2]][0]) * (n/5),1) for n in range(6)]
+
     #make uncertainty plots
     for z in range(5):
         ax = fig.add_subplot(gs[0, z])
@@ -396,9 +400,15 @@ def visualize(optimizer: BayesianOptimization):
         ax.set_title(f'{keys[0]} {int(feature[0]+(feature[1]-feature[0])*(z/5))} to {int(feature[0]+(feature[1]-feature[0])*((z+1)/5))}')
         if(z==0):
             ax.set_ylabel(keys[1])
+            ax.set_yticks(ticks=tick_positions, labels=ylabels)
+        else:
+            ax.set_yticks([])
         ax.set_xlabel(keys[2])
-        ax.set_xticks([])
-        ax.set_yticks([])
+        if(z%2 == 0):
+            ax.set_xticks(ticks=tick_positions, labels=xlabels)
+        else:
+            ax.set_xticks([])
+        
     #make predicted value plots
     for z in range(5):
         ax = fig.add_subplot(gs[1, z])
@@ -406,9 +416,14 @@ def visualize(optimizer: BayesianOptimization):
         ax.set_title(f'{keys[0]} {int(feature[0]+(feature[1]-feature[0])*(z/5))} to {int(feature[0]+(feature[1]-feature[0])*((z+1)/5))}')
         if(z==0):
             ax.set_ylabel(keys[1])
+            ax.set_yticks(ticks=tick_positions, labels=ylabels)
+        else:
+            ax.set_yticks([])
         ax.set_xlabel(keys[2])
-        ax.set_xticks([])
-        ax.set_yticks([])
+        if(z%2 == 0):
+            ax.set_xticks(ticks=tick_positions, labels=xlabels)
+        else:
+            ax.set_xticks([])
     
     #make color bars
     cmap_1 = mpl.colormaps['mako']
