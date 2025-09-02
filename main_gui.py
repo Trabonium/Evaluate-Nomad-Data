@@ -22,12 +22,30 @@ from functions.Create_Excel_GUI_2 import Excel_GUI
 from functions.EQE_Joshua_extern import GUI_fuer_Joshuas_EQE
 from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
-from functions.UVVis_plotting import UVVis_plotting     
+from functions.UVVis_plotting import UVVis_plotting   
+from functions.plot_style import open_style_tool  
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
 import threading
 from pathlib import Path
+
+#set default plot style - can be rewritten later with functions.plot_style
+import matplotlib as mpl
+mpl.rcParams.update({
+    "text.usetex": False,          # richtig
+    "font.family": "sans-serif",   # richtig
+    "font.sans-serif": ["Arial"],  # wenn Arial explizit
+    "axes.labelsize": 14,
+    "axes.titlesize": 16,
+    "xtick.labelsize": 13,
+    "ytick.labelsize": 13,
+    "legend.fontsize": 13,
+    "lines.linewidth": 1.5,
+    "figure.dpi": 600,
+})
+
+
 
 # Globale Variablen für Spinner
 frames = []
@@ -171,6 +189,15 @@ def csv_filtered_export():
                 generate_csv_filtered_file(path, filtered_data, data, None)
     run_with_spinner(task_csv_filtered_export)
 
+def set_plot_style():
+    def task_set_plot_style():
+        try:
+            from functions.plot_style import open_style_tool
+            open_style_tool(root)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Plot style tool could not be opened: {e}"))
+    run_with_spinner(task_set_plot_style)
+
 def free_filter_for_halfstacks():
     def task_free_filter_for_halfstacks():
         global filtered_data, data
@@ -194,7 +221,6 @@ def free_filter_for_halfstacks():
 def UVVis_plotting_function():
     def task_UVVis_plotting_function():
         global filtered_data, data, nomad_url, token, uvvis_unit_mode
-        Latex_UVVis = latex_var.get()
         #check if data is loaded
         if data is None:
             root.after(0, lambda : messagebox.showerror("Error", f"Please load your data first!: {e}"))
@@ -212,7 +238,7 @@ def UVVis_plotting_function():
         data_to_plot = filtered_data if filtered_data is not None else data
 
         try:
-            UVVis_plotting(data_to_plot, file_path, Latex_UVVis, nomad_url, token, unit = uvvis_unit_mode)
+            UVVis_plotting(data_to_plot, file_path, nomad_url, token, unit = uvvis_unit_mode)
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"UVVis plotting gone wrong: {e}"))
     run_with_spinner(task_UVVis_plotting_function)
@@ -296,7 +322,6 @@ def generate_report():
             "MPP": mpp_var.get(),
             "Table": table_var.get(), 
             "Picture": picture_var.get(),
-            "Latex": latex_var.get(),
         }
 
         file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
@@ -347,7 +372,7 @@ def toggle_plot_options():
         plot_options_frame.grid_remove()  # Nur das Frame verstecken
         toggle_button.config(text="▶ Show Plot Options")  # Button bleibt sichtbar
     else:
-        plot_options_frame.grid(row=15, column=0, pady=5, sticky="n")  # Wieder anzeigen
+        plot_options_frame.grid(row=16, column=0, pady=5, sticky="n")  # Wieder anzeigen
         toggle_button.config(text="▼ Hide Plot Options")
 
 
@@ -557,6 +582,7 @@ buttons_info2 = [ #buttons für das erste notebook
     ("Calculate Statistics", calculate_stats, "Calculate the statistics of your data."),
     ("Generate CSV (raw data)", generate_csv_raw_file, "Export your raw data as csv (optional and repeatable)."),
     ("Generate CSV (filtered data)", generate_csv_filtered_file, "Export your filtered data as csv (optional and repeatable)."),
+    ("Plot style", set_plot_style, "Set the plot style (optional and repeatable)."),
     ("Generate Report", generate_report, "Export your report with your wished plots and informations (optional and repeatable).")
 ]
 
@@ -575,13 +601,13 @@ for text, command, tooltip in buttons_info2:
 
 
 toggle_button = tk.Button(frame1, text="▶ Show Plot Options", command=toggle_plot_options)
-toggle_button.grid(row=14, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
+toggle_button.grid(row=15, column=0, pady=10)  # Stelle sicher, dass der Button über den Optionen bleibt
 
 apply_hover_effect(toggle_button, "TButton", "Hover.TButton")
 
 # Frame für Checkboxen (zunächst versteckt)
 plot_options_frame = tk.Frame(frame1)
-plot_options_frame.grid(row=15, column=0, pady=5, sticky="n")
+plot_options_frame.grid(row=16, column=0, pady=5, sticky="n")
 plot_options_frame.grid_remove()
 
 # Checkbox-Variablen für Plots
@@ -593,7 +619,6 @@ eqe_var = tk.BooleanVar(value=False)
 mpp_var = tk.BooleanVar(value=False)
 table_var = tk.BooleanVar(value=True)
 picture_var = tk.BooleanVar(value=False)
-latex_var = tk.BooleanVar(value=False)
 
 # Checkboxen
 plot_options = [
@@ -604,8 +629,7 @@ plot_options = [
     ("EQE Curves", eqe_var, "Plot EQE data - of the best availabe sample for each variation"),
     ("MPP Curves", mpp_var, "Plots the MPP tracking - of the best availabe sample for each variation"),
     ("Data Table", table_var, "Adds a table with the most important informations to your PDF."), 
-    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report."),
-    ("Latex text", latex_var, "Renders the text in the plots in LaTeX format (you need a LaTeX distribution installed).")
+    ("Generate pictures", picture_var, "Saves all plots as svg vector files additionally to the pdf report.")
 ]
 
 for idx, (text, var, tooltip) in enumerate(plot_options):
@@ -616,7 +640,6 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
     check.bind("<Leave>", hide_tooltip)
 
 #ende frame no 1
-
 buttons_info3 = [ #buttons für frame 2
     ("Halfstack filter", free_filter_for_halfstacks, "Filter your data for halfstacks if wished (optional and repeatable)."), 
     ("UVVis plotting", UVVis_plotting_function, "Plot your UVVis data with the band gaps."),

@@ -1,5 +1,5 @@
-import matplotlib
-matplotlib.use("Agg")
+import matplotlib as mpl
+mpl.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -80,12 +80,9 @@ def find_peaks_and_fit_gaussian(x, y):
             y_masked[fitting_range] = 0
         return results
 
-def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
+def plot_tauc(data, file_path, nomad_url, token):
     #alpha = 1/d * ln( (1-R)^2 / T )
     thickness_nm = 550  # Schichtdicke in nm
-
-    from functions.plot_style import set_plot_style_UVVis
-    set_plot_style_UVVis(Latex_UVVis)
 
     fig, ax = plt.subplots(figsize=(10, 7))
 
@@ -177,10 +174,8 @@ def plot_tauc(data, file_path, nomad_url, token, Latex_UVVis):
         plt.show()
 
 
-def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
+def plot_uvvis_photon_energy(data, file_path, nomad_url, token):
     # === Plot-Setup ===
-    from functions.plot_style import set_plot_style_UVVis
-    set_plot_style_UVVis(Latex_UVVis)
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -246,7 +241,7 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
             axs[1].set_xlabel("Photon Energy (eV)")
             axs[1].set_ylabel("d(Absorption)/d(Energy)")
 
-            if Latex_UVVis:
+            if mpl.rcParams["text.usetex"]:
                 axs[0].set_ylabel(r"Absorption (\%)")
             else:
                 axs[0].set_ylabel("Absorption (%)")
@@ -266,10 +261,9 @@ def plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis):
 
     return
 
-def plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis):
+def plot_uvvis_wavelength(data, file_path, nomad_url, token):
     # === Plot-Setup ===
-    from functions.plot_style import set_plot_style_UVVis
-    set_plot_style_UVVis(Latex_UVVis)
+    
 
     fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 
@@ -342,7 +336,7 @@ def plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis):
             axs[0].invert_xaxis()  # ⬅️ neu: linke Achse invertieren!
             axs[1].invert_xaxis()
             axs[1].set_ylabel("d(Absorption)/d(Wavelength)")
-            if Latex_UVVis:
+            if mpl.rcParams["text.usetex"]:
                 axs[0].set_ylabel(r"Absorption (\%)")
             else:
                 axs[0].set_ylabel("Absorption (%)")
@@ -362,12 +356,12 @@ def plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis):
 
     return
 
-def UVVis_plotting(data, file_path, Latex_UVVis, nomad_url, token, unit):
+def UVVis_plotting(data, file_path, nomad_url, token, unit):
     if unit == "tauc_plot":
-        return plot_tauc(data, file_path, nomad_url, token, Latex_UVVis)
+        return plot_tauc(data, file_path, nomad_url, token)
     elif unit == "photon_energy":
-        return plot_uvvis_photon_energy(data, file_path, nomad_url, token, Latex_UVVis)
+        return plot_uvvis_photon_energy(data, file_path, nomad_url, token)
     elif unit == "wavelength":
-        return plot_uvvis_wavelength(data, file_path, nomad_url, token, Latex_UVVis)
+        return plot_uvvis_wavelength(data, file_path, nomad_url, token)
     else:
         raise ValueError(f"Unknown unit: {unit}")

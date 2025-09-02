@@ -1,5 +1,5 @@
-import matplotlib
-matplotlib.use("Agg")
+import matplotlib as mpl
+mpl.use("Agg")
 '''
 makes it impossible to use matplotlib GUI here (eg show()) but otherwise we get problems with the side thread
 '''
@@ -12,9 +12,7 @@ from functions.api_calls_get_data import get_specific_data_of_sample
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
-def plot_JV_curves(result_df, curve_type, nomad_url, token, Latex_bool):
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_bool)
+def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
     fig, ax = plt.subplots()
     
@@ -34,7 +32,7 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token, Latex_bool):
                     PCE = cell["jv_curve"][i]["efficiency"]
                     if PCE == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
-                        if Latex_bool:
+                        if mpl.rcParams["text.usetex"]:
                             ax.plot(cell["jv_curve"][i]["voltage"], \
                                     cell["jv_curve"][i]["current_density"], \
                                     label=fr"{row['category']}: {round(PCE,2)}\%")
@@ -83,10 +81,8 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token, Latex_bool):
 
 ### Function to plot EQE curves ###_____________________________________________________________________________________________________
 
-def plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool):
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_bool)
-
+def plot_EQE_curves(df, result_df, nomad_url, token):
+    
     max_EQE = .0
     wellenlenge_min = np.inf
     wellenlenge_max = .0
@@ -140,7 +136,7 @@ def plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool):
     ax.set_xlim(wellenlenge_min-20, wellenlenge_max+20)
     ax.set_title(f'EQE Curves')
     ax.set_xlabel('Wavelength (nm)')
-    if Latex_bool:
+    if mpl.rcParams["text.usetex"]:
         ax.set_ylabel(r'EQE (\%)')
     else:
         ax.set_ylabel('EQE (%)')
@@ -164,9 +160,7 @@ def plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool):
 
 ### Function to plot MPP curves ###_____________________________________________________________________________________________________
 
-def plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool):
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_bool)
+def plot_MPP_curves(df, result_df, nomad_url, token):
     
     fig, ax = plt.subplots()
     
@@ -213,7 +207,7 @@ def plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool):
     ax.set_ylim(0, 25)
     ax.set_title(f'MPP Tracking')
     ax.set_xlabel('Time (s)')
-    if Latex_bool:
+    if mpl.rcParams["text.usetex"]:
         ax.set_ylabel(r'PCE (\%)')
     else:
         ax.set_ylabel('PCE (%)')
@@ -237,9 +231,8 @@ def plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool):
 
 ### Function to plot box and scatter plots ###_________________________________________________________________________________________
 
-def plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, quantity=['variation'], SeparateScanDir=False):
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_bool)
+def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], SeparateScanDir=False):
+    
     
     # Define the base color palette for unique variations
     base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df[quantity].unique())))
@@ -271,7 +264,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, quantity=['variat
 
     # Define Y-Axis Labels
     jv_quantity = ['efficiency', 'open_circuit_voltage', 'fill_factor', 'short_circuit_current_density']
-    if Latex_bool: 
+    if mpl.rcParams["text.usetex"]:
         jv_quantity_labels = {
         'open_circuit_voltage': r"$\mathrm{V_{oc} \, (V)}$",
         'fill_factor': "FF",
@@ -458,9 +451,7 @@ def plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, quantity=['variat
     return fig
 
 #hysteresis plot function
-def plot_hysteresis(df, Latex_bool): #quantity is here default 'variation'
-    from functions.plot_style import set_plot_style
-    set_plot_style(Latex_bool)
+def plot_hysteresis(df): #quantity is here default 'variation'
 
     # Berechnung der Quotienten für jede Variation
     quotient_data = []

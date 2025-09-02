@@ -53,18 +53,16 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
     df = df.dropna(subset=['efficiency'])  # Drop rows with NaN values in 'efficiency'
     result_df = result_df.dropna(subset=['maximum_efficiency']) # Drop rows with NaN values in 'maximum_efficiency'
 
-    Latex_bool = include_plots.get('Latex', False)
-
     with PdfPages(report_title) as pdf:
         # Include JV Curves
         if include_plots.get('JV', False):
-            fig_max = plot_JV_curves(result_df, 'maximum_efficiency', nomad_url, token, Latex_bool)
+            fig_max = plot_JV_curves(result_df, 'maximum_efficiency', nomad_url, token)
             if include_plots.get('Picture', False):
                 fig_max.savefig(directory+"/"+ file_name[:-4]+"_Best_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_max, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig_max)
 
-            fig_med = plot_JV_curves(result_df, 'closest_median', nomad_url, token, Latex_bool)
+            fig_med = plot_JV_curves(result_df, 'closest_median', nomad_url, token)
             if include_plots.get('Picture', False):
                 fig_med.savefig(directory+"/"+ file_name[:-4]+"_Median_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_med, dpi=300, transparent=True, bbox_inches='tight')
@@ -73,14 +71,14 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
         # Include Box and Scatter Plots for PCE, FF, Voc, Jsc
         if include_plots.get('Box+Scatter', False):
             SeparateScanDir = include_plots.get('SeparateScan', False)
-            fig = plot_box_and_scatter(df, filter_cycle_boolean, Latex_bool, 'variation', SeparateScanDir)
+            fig = plot_box_and_scatter(df, filter_cycle_boolean, 'variation', SeparateScanDir)
             if include_plots.get('Picture', False):
                 fig.savefig(directory+"/"+ file_name[:-4]+"_boxplot.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig, dpi=300, transparent=True, bbox_inches='tight')
             plt.close(fig)
 
         if include_plots.get('Hysteresis', False):
-            fig_hys = plot_hysteresis(df, Latex_bool)
+            fig_hys = plot_hysteresis(df)
             if include_plots.get('Picture', False):
                 fig_hys.savefig(directory+"/"+ file_name[:-4]+"_Hysteresis_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_hys, dpi=300, transparent=True, bbox_inches='tight')
@@ -88,7 +86,7 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
 
         # Include EQE Curves
         if include_plots.get('EQE', False):
-            fig_eqe = plot_EQE_curves(df, result_df, nomad_url, token, Latex_bool)
+            fig_eqe = plot_EQE_curves(df, result_df, nomad_url, token)
             if include_plots.get('Picture', False):
                 fig_eqe.savefig(directory+"/"+ file_name[:-4]+"_EQE.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_eqe, dpi=300, transparent=True, bbox_inches='tight')
@@ -96,7 +94,7 @@ def generate_pdf_report(df, result_df, best_df, include_plots, report_title, nom
 
         # Include MPP Curves
         if include_plots.get('MPP', False):
-            fig_mpp = plot_MPP_curves(df, result_df, nomad_url, token, Latex_bool)
+            fig_mpp = plot_MPP_curves(df, result_df, nomad_url, token)
             if include_plots.get('Picture', False):
                 fig_mpp.savefig(directory+"/"+ file_name[:-4]+"_MPP_JV.svg", format='svg', dpi = 800, bbox_inches = "tight", facecolor="white")
             pdf.savefig(fig_mpp, dpi=300, transparent=True, bbox_inches='tight')
