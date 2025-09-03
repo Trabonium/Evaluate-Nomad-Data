@@ -178,14 +178,15 @@ def apply_style():
 
     return
 
-def open_style_tool(master):
+def open_style_tool(master, default_style="Thesis"):
     global params_frame
 
     window = tk.Toplevel(master)
     window.title("Matplotlib Style Tool")
 
-    style_var = tk.StringVar(value="Thesis")
-    style_menu = ttk.Combobox(window, textvariable=style_var, values=list(PLOT_STYLES.keys()))
+    # Style-Auswahl Combobox
+    style_var = tk.StringVar(value=default_style)
+    style_menu = ttk.Combobox(window, textvariable=style_var, values=list(PLOT_STYLES.keys()), state="readonly")
     style_menu.grid(row=0, column=0, padx=10, pady=5)
 
     load_btn = ttk.Button(window, text="Load style", command=lambda: load_style(style_var.get()))
@@ -194,11 +195,13 @@ def open_style_tool(master):
     params_frame = ttk.Frame(window)
     params_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
 
-    load_style("Thesis")
+    # Lade den gewünschten Default-Style direkt beim Start
+    load_style(default_style)
 
-    apply_btn = ttk.Button(window, text="Apply", command=apply_style)
+    apply_btn = ttk.Button(window, text="Apply & Close", command=lambda: apply_style(window))
     apply_btn.grid(row=2, column=0, columnspan=2, pady=10)
 
     # Modal Verhalten
     window.grab_set()
     window.wait_window()
+

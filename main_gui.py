@@ -193,7 +193,7 @@ def set_plot_style():
     def task_set_plot_style():
         try:
             from functions.plot_style import open_style_tool
-            open_style_tool(root)
+            open_style_tool(root, default_style="Thesis")
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"Plot style tool could not be opened: {e}"))
     run_with_spinner(task_set_plot_style)
