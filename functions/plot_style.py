@@ -134,7 +134,7 @@ def load_style(style_name):
 
     toggle_mathtext_visibility()
 
-def apply_style():
+def apply_style(window):
     new_params = {}
 
     if entries["usetex"].get():
@@ -176,6 +176,7 @@ def apply_style():
     for k, v in new_params.items():
         print(f"  {k}: {v}")
 
+    window.destroy()
     return
 
 def open_style_tool(master, default_style="Thesis"):
