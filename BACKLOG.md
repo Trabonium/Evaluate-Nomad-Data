@@ -2,7 +2,7 @@
 
 
 ## Hardware
-- think about additional backup for redundency
+- think about additional backup for redundancy
 
 ## Bugs
 - Manchmal wird GP nicht übertragen auf Vizulization
