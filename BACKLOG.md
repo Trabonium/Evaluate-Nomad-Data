@@ -1,6 +1,9 @@
 # Backlog (Ctrl + Shift + V für VSCode Ansicht)
 
 
+## Hardware
+- think about additional backup for redundency
+
 ## Bugs
 - Manchmal wird GP nicht übertragen auf Vizulization
 - Not working without filtering for bad cells / JV plot
