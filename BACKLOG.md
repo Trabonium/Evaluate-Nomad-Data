@@ -12,6 +12,7 @@
 
 ## Features
 - plot style for PPPs
+- Somehow include number or % of cells removed through filtering and filter conditions - maybe in the results df?
 
 ### GUI
 - Rework tauc plot --> scheisse at all
