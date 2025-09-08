@@ -1,6 +1,9 @@
 # Backlog (Ctrl + Shift + V für VSCode Ansicht)
 
 
+## Hardware
+- think about additional backup for redundancy
+
 ## Bugs
 - Manchmal wird GP nicht übertragen auf Vizulization
 - Not working without filtering for bad cells / JV plot
@@ -9,6 +12,7 @@
 
 ## Features
 - plot style for PPPs
+- Somehow include number or % of cells removed through filtering and filter conditions - maybe in the results df?
 
 ### GUI
 - Rework tauc plot --> scheisse at all
