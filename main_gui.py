@@ -169,6 +169,7 @@ def calculate_stats():
 # CSV-Export-Funktionen
 def csv_raw_export():
     def task_csv_raw_export():
+        global data
         if data is None:
             root.after(0, lambda : messagebox.showerror("Error", f"Please load data first!: {e}"))
             return
@@ -180,13 +181,14 @@ def csv_raw_export():
 
 def csv_filtered_export():
     def task_csv_filtered_export():
+        global data, filtered_data
         if filtered_data is None:
             root.after(0, lambda : messagebox.showerror("Error", f"Please filter data first!: {e}"))
             return
         else:
             path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
             if path:
-                generate_csv_filtered_file(path, filtered_data, data, None)
+                generate_csv_filtered_file(path, filtered_data, data)
     run_with_spinner(task_csv_filtered_export)
 
 def set_plot_style():
@@ -580,8 +582,8 @@ notebook.grid(row=8, column=0, columnspan=2, pady=10, sticky="ew")
 buttons_info2 = [ #buttons für das erste notebook
     ("Filter your data", filter_data, "Filter your data if wished (optional and repeatable)."),
     ("Calculate Statistics", calculate_stats, "Calculate the statistics of your data."),
-    ("Generate CSV (raw data)", generate_csv_raw_file, "Export your raw data as csv (optional and repeatable)."),
-    ("Generate CSV (filtered data)", generate_csv_filtered_file, "Export your filtered data as csv (optional and repeatable)."),
+    ("Generate CSV (raw data)", csv_raw_export, "Export your raw data as csv (optional and repeatable)."),
+    ("Generate CSV (filtered data)", csv_filtered_export, "Export your filtered data as csv (optional and repeatable)."),
     ("Plot style", set_plot_style, "Set the plot style (optional and repeatable)."),
     ("Generate Report", generate_report, "Export your report with your wished plots and informations (optional and repeatable).")
 ]
