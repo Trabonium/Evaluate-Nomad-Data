@@ -24,6 +24,7 @@ from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
 from functions.UVVis_plotting import UVVis_plotting   
 from functions.plot_style import open_style_tool  
+from functions.latin_hypercube_sampling import latin_hypercube_sampling_gui
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
@@ -305,6 +306,14 @@ def spilt_puri_tandem_files():
         except Exception as e:
             root.after(0, lambda : messagebox.showerror("Error", f"Something went wrong with the tandem splitting: {e}"))
     run_with_spinner(task_spilt_puri_tandem_files)
+
+def latin_hypercube_sampler():
+    def task_latin_hypercube_sampler():
+        try:
+            latin_hypercube_sampling_gui(master=root)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Something went wrong with the latin hypercube sampler: {e}"))
+    run_with_spinner(task_latin_hypercube_sampler)
 
 def generate_report():
     def task_generate_report():
@@ -677,7 +686,8 @@ buttons_info4 = [ #buttons für frame 3
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
     ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format. Adds .jv to the end of the filename and changes the cycle and pixel info to be read properly"), 
-    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
+    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format."),
+    ("Latin Hypercube Sampling", latin_hypercube_sampler, "Generate Sample configurations with LHS")
 ]
 
 row_index = 1
