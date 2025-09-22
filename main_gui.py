@@ -33,9 +33,9 @@ from pathlib import Path
 #set default plot style - can be rewritten later with functions.plot_style
 import matplotlib as mpl
 mpl.rcParams.update({
-    "text.usetex": False,          # richtig
-    "font.family": "sans-serif",   # richtig
-    "font.sans-serif": ["Arial"],  # wenn Arial explizit
+    "text.usetex": False,          
+    "font.family": "sans-serif",   
+    "font.sans-serif": ["Arial"],  
     "axes.labelsize": 14,
     "axes.titlesize": 16,
     "xtick.labelsize": 13,
