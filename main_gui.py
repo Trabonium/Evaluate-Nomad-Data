@@ -45,8 +45,6 @@ mpl.rcParams.update({
     "figure.dpi": 600,
 })
 
-
-
 # Globale Variablen für Spinner
 frames = []
 gif_label = None
@@ -65,7 +63,7 @@ directory = None
 file_name = None
 filter_cycle_boolean = None
 nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
-uvvis_unit_mode = "wavelength" # default for UVVis plotting
+uvvis_unit_mode = "wavelength" # default for UVVis plotting for the toggle button
 
 
 def show_auto_close_message(title, message, timeout=3000):
