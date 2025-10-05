@@ -26,17 +26,35 @@ def _denormalize_samples(samples: list, normalization_bounds: list)->list:
     return denorm_samples
 
 def roundPartial (value:float, resolution:float)->float:
-    return round (value / resolution) * resolution
+    return round(round (value / resolution) * resolution, 10)
+
 
 def latin_hypercube_sampling_gui(master):
-
+ 
     def start_generation():
         dimensionality = len(rows)
 
-        samples = get_latin_hypercube_sample(dimensionality=dimensionality, n_samples=var_sample_count.get(), scramble=scrambling.get(), enhanced_orthoganal_sampling=orthogonal_sampling.get())
+        try:
+            samples = get_latin_hypercube_sample(dimensionality=dimensionality, n_samples=var_sample_count.get(), scramble=scrambling.get(), enhanced_orthoganal_sampling=orthogonal_sampling.get())
+        except ValueError as error:
+            show_error(str(error))
+            return
+        
         bounds = []
         for row in rows:
             bounds.append([row[1].get(), row[2].get()])
+
+        stepsize = [r[3].get() for r in rows]
+
+
+        for b in bounds:
+            if b[0] >= b[1]:
+                show_error("Please specify upper bounds that are greater than lower bounds")
+                return
+        for f in stepsize:
+            if(f<=0):
+                show_error("step size must be greater than 0")
+                return
 
         samples = _denormalize_samples(samples=samples, normalization_bounds=bounds)
         #round to step size
@@ -81,6 +99,17 @@ def latin_hypercube_sampling_gui(master):
 
         rows.append((name_var, low_var, high_var, stepsize_var))
 
+    def hide_error():
+        errortext.config(text="")
+        errortext.grid_remove()
+        errorclose.grid_remove()
+
+    def show_error(errormsg: str):
+        errortext.config(text=errormsg)
+        errortext.grid()
+        errorclose.grid()
+        
+
     lhs_gui_window = tk.Toplevel(master)
     lhs_gui_window.title("Latin Hypercube Sample Generator")
     
@@ -117,6 +146,14 @@ def latin_hypercube_sampling_gui(master):
     output_box = tk.Text(lhs_gui_window, height=8, width=60, wrap="word", state="normal")
     output_box.grid(row=6, column=0, padx=10, pady=10)
     output_box.grid_remove()
+
+    errortext = tk.Label(lhs_gui_window, text="", fg='#f00')
+    errortext.grid(row=7, column=0, padx=10, pady=10)
+    errortext.grid_remove()
+
+    errorclose = tk.Button(lhs_gui_window, text="❌", fg='#f00', command=hide_error)
+    errorclose.grid(row=7, column=1, padx=10, pady=0)
+    errorclose.grid_remove()
 
     lhs_gui_window.grab_set()
     lhs_gui_window.wait_window()
