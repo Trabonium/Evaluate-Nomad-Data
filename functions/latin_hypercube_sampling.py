@@ -76,6 +76,8 @@ def latin_hypercube_sampling_gui(master):
                 sample_string += ";"
                 sample_string += str(s[d+1])
             output_box.insert("end", sample_string + "\n")
+        
+        export_button.grid()
 
 
     def add_row():
@@ -108,6 +110,14 @@ def latin_hypercube_sampling_gui(master):
         errortext.config(text=errormsg)
         errortext.grid()
         errorclose.grid()
+
+    def export_csv():
+        file = filedialog.asksaveasfile(mode="w", defaultextension='.csv')
+        if not file:
+            #No file was created by the user
+            return
+        file.write(output_box.get('1.0', 'end-1c'))
+        pass
         
 
     lhs_gui_window = tk.Toplevel(master)
@@ -124,6 +134,8 @@ def latin_hypercube_sampling_gui(master):
 
     rows = []
     add_row()
+
+    samples = [] #used in generation and export csv
 
     add_button = tk.Button(lhs_gui_window, text="➕ Add Row", command=add_row)
     add_button.grid(row=2, column=0, pady=10)
@@ -147,12 +159,16 @@ def latin_hypercube_sampling_gui(master):
     output_box.grid(row=6, column=0, padx=10, pady=10)
     output_box.grid_remove()
 
+    export_button = tk.Button(lhs_gui_window, text="Export as .CSV", command=export_csv)
+    export_button.grid(row=7, column=0, padx=10, pady=10)
+    export_button.grid_remove()
+
     errortext = tk.Label(lhs_gui_window, text="", fg='#f00')
-    errortext.grid(row=7, column=0, padx=10, pady=10)
+    errortext.grid(row=8, column=0, padx=10, pady=10)
     errortext.grid_remove()
 
     errorclose = tk.Button(lhs_gui_window, text="❌", fg='#f00', command=hide_error)
-    errorclose.grid(row=7, column=1, padx=10, pady=0)
+    errorclose.grid(row=8, column=1, padx=10, pady=0)
     errorclose.grid_remove()
 
     lhs_gui_window.grab_set()
