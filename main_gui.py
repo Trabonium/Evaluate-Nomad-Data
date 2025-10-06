@@ -396,7 +396,7 @@ def init_spinner_ui(master):
     TARGET_SIZE = (100, 100)
 
     try:
-        gif_path = resource_path("giffolder/spinner.gif")
+        gif_path = resource_path(r"Evaluate-Nomad-Data\giffolder\spinner.gif")
         gif = Image.open(gif_path)
         frames.clear()  # falls neu initialisiert
 
