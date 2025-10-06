@@ -8,6 +8,7 @@ from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 import math
+from scipy.stats import linregress
 from functions.api_calls_get_data import get_specific_data_of_sample
 
 ### Function to plot JV curves ###______________________________________________________________________________________________________
@@ -196,15 +197,30 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
         pce_array = mpp_data[0]['efficiency']
         voltage_array = mpp_data[0]['voltage']
         last_pce = mpp_data[0]['properties']['last_pce']
+
+        # Schritt 1: Maximum finden
+        max_idx = np.argmax(pce_array)
+        P_max = pce_array[max_idx]
+        P_80 = 0.8 * P_max
+
+        # Schritt 2: Fit ab Maximum
+        x_fit = time_array[max_idx:]
+        y_fit = pce_array[max_idx:]
+        slope, intercept, *_ = linregress(x_fit, y_fit)
+
+        # Schritt 3: Schnittpunkt mit P_80 berechnen
+        # P_80 = slope * x_T80 + intercept  →  x_T80 = (P_80 - intercept) / slope
+        x_T80 = (P_80 - intercept) / slope
         #Plot
-        ax.plot(time_array, pce_array, label=f"{row['category']}", color=colors[index])
+        ax.plot(time_array, pce_array, label=f"{row['category']} | T80 [s] = {x_T80:.1f}", color=colors[index])
+        ax.hlines(y=max(pce_array), xmin=0, xmax=300, colors=colors[index], linestyles='--', linewidth=.5)
         print(row[f'maximum_efficiency_id'])
                         
  
     # Plot settings
     ax.legend()
     ax.set_xlim(0, 300)
-    ax.set_ylim(0, 25)
+    #ax.set_ylim(0, 25)
     ax.set_title(f'MPP Tracking')
     ax.set_xlabel('Time (s)')
     if mpl.rcParams["text.usetex"]:
