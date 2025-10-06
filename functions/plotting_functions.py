@@ -212,7 +212,7 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
         # P_80 = slope * x_T80 + intercept  →  x_T80 = (P_80 - intercept) / slope
         x_T80 = (P_80 - intercept) / slope
         #Plot
-        ax.plot(time_array, pce_array, label=f"{row['category']} | T80 [s] = {x_T80:.1f}", color=colors[index])
+        ax.plot(time_array, pce_array, label=f"{row['category']} | T80 = {x_T80:.1f}s", color=colors[index])
         ax.hlines(y=max(pce_array), xmin=0, xmax=300, colors=colors[index], linestyles='--', linewidth=.5)
         print(row[f'maximum_efficiency_id'])
                         
