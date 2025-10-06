@@ -1,8 +1,9 @@
 import math
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog
 from scipy.stats.qmc import LatinHypercube
 from sympy import isprime
+from .maingui_utils import ToolTip
 
 def get_latin_hypercube_sample(dimensionality: int, n_samples: int, scramble: bool= False, enhanced_orthoganal_sampling: bool = True) -> list:
     orthogonal_strength = 2 if enhanced_orthoganal_sampling else 1
@@ -127,31 +128,39 @@ def latin_hypercube_sampling_gui(master):
     form_frame = tk.Frame(lhs_gui_window)
     form_frame.grid(row=1, columnspan=5, padx=10, pady=10)
 
-    tk.Label(form_frame, text="Variable Name").grid(row=0, column=0, padx=5, pady=10)
+    label_varname = tk.Label(form_frame, text="Variable Name")
+    label_varname.grid(row=0, column=0, padx=5, pady=10)
+    tooltip_varname = ToolTip(label_varname, "can be any string")
     tk.Label(form_frame, text="Lower Bound").grid(row=0, column=1, padx=5, pady=10)
     tk.Label(form_frame, text="Upper Bound").grid(row=0, column=2, padx=5, pady=10)
-    tk.Label(form_frame, text="Step size").grid(row=0, column=3, padx=5, pady=10)
+    label_stepsize = tk.Label(form_frame, text="Step size")
+    label_stepsize.grid(row=0, column=3, padx=5, pady=10)
+    tooltip_stepsize = ToolTip(label_stepsize, "can be any number greater than 0")
 
     rows = []
     add_row()
 
-    samples = [] #used in generation and export csv
-
     add_button = tk.Button(lhs_gui_window, text="➕ Add Row", command=add_row)
     add_button.grid(row=2, column=0, pady=10)
+    addrow_tooltip = ToolTip(add_button, "adds another row with dimension, bounds and stepsize")
 
     var_sample_count = tk.IntVar()
-    tk.Label(lhs_gui_window, text="Sample count:").grid(row=3, column=0, padx=10, pady=10)
+    label_samplecount = tk.Label(lhs_gui_window, text="Sample count:")
+    label_samplecount.grid(row=3, column=0, padx=10, pady=10)
     sample_count_entry = tk.Entry(lhs_gui_window, textvariable=var_sample_count, width=30)
     sample_count_entry.grid(row=3, column=1, padx=10, pady=10)
+    sample_count_tooltip = ToolTip(label_samplecount, "can be any number if Enhanced distribution is inactive, must be a prime squared if it is active (e.g. 1,4,9,25 ...)")
 
     scrambling = tk.BooleanVar()
-    toggle_button = tk.Checkbutton(lhs_gui_window, text="Scramble samples", variable=scrambling)
-    toggle_button.grid(row=4, column=0, padx=10, pady=10)
+    scramble_toggle = tk.Checkbutton(lhs_gui_window, text="Scramble samples", variable=scrambling)
+    scramble_toggle.grid(row=4, column=0, padx=10, pady=10)
+    tooltip_scramble = ToolTip(scramble_toggle, "distributes the points randomly within their lanes")
 
     orthogonal_sampling = tk.BooleanVar(value=True)
-    toggle_button = tk.Checkbutton(lhs_gui_window, text="Enhanced distribution", variable=orthogonal_sampling)
-    toggle_button.grid(row=4, column=1, padx=10, pady=10)
+    orthogonal_toggle = tk.Checkbutton(lhs_gui_window, text="Enhanced distribution", variable=orthogonal_sampling)
+    orthogonal_toggle.grid(row=4, column=1, padx=10, pady=10)
+    tooltip_orthogonal = ToolTip(orthogonal_toggle, "balances distribution for any two dimensions. If active, sample count must be a prime squared (e.g. 1,4,9,25 ...)")
+
 
     tk.Button(lhs_gui_window, text="Generate", command=start_generation).grid(row=5, columnspan=3, pady=20)
 
