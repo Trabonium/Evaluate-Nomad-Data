@@ -24,6 +24,8 @@ from functions.rename_JV_Daniel import measurement_file_organizer
 from functions.Tandem_Puri_JV_split import tandem_puri_jv_split
 from functions.UVVis_plotting import UVVis_plotting   
 from functions.plot_style import open_style_tool  
+from functions.latin_hypercube_sampling import latin_hypercube_sampling_gui
+from functions.maingui_utils import ToolTip
 
 #spinner imports
 from PIL import Image, ImageTk, ImageSequence, ImageOps
@@ -304,6 +306,14 @@ def spilt_puri_tandem_files():
             root.after(0, lambda : messagebox.showerror("Error", f"Something went wrong with the tandem splitting: {e}"))
     run_with_spinner(task_spilt_puri_tandem_files)
 
+def latin_hypercube_sampler():
+    def task_latin_hypercube_sampler():
+        try:
+            latin_hypercube_sampling_gui(master=root)
+        except Exception as e:
+            root.after(0, lambda : messagebox.showerror("Error", f"Something went wrong with the latin hypercube sampler: {e}"))
+    run_with_spinner(task_latin_hypercube_sampler)
+
 def generate_report():
     def task_generate_report():
         global data, stats, directory, file_name, filtered_data, best, filter_cycle_boolean
@@ -345,26 +355,6 @@ def apply_hover_effect(widget, normal_style, hover_style):
     else:  
         widget.bind("<Enter>", lambda e: widget.config(bg="lightgray"))
         widget.bind("<Leave>", lambda e: widget.config(bg="SystemButtonFace"))
-
-# Funktion für Tooltips
-def show_tooltip(event, text):
-    """Zeigt einen Tooltip mit dem gegebenen Text an"""
-    global tooltip_window
-    x, y, _, _ = event.widget.bbox("insert")
-    x += event.widget.winfo_rootx() + 25
-    y += event.widget.winfo_rooty() + 25
-    tooltip_window = tk.Toplevel(event.widget)
-    tooltip_window.wm_overrideredirect(True)
-    tooltip_window.geometry(f"+{x}+{y}")
-    label = tk.Label(tooltip_window, text=text, background="lightyellow", relief="solid", borderwidth=1)
-    label.pack()
-
-def hide_tooltip(event):
-    """Versteckt den Tooltip"""
-    global tooltip_window
-    if tooltip_window:
-        tooltip_window.destroy()
-        tooltip_window = None
 
 # Toggle-Funktion für Plot-Optionen
 def toggle_plot_options():
@@ -492,13 +482,11 @@ password_entry.grid(row=2, column=0, pady=5)
 # Fragezeichen für Login-Felder
 username_help = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
 username_help.grid(row=1, column=1, padx=5)
-username_help.bind("<Enter>", lambda e: show_tooltip(e, "Please insert your NOMAD name or email here."))
-username_help.bind("<Leave>", hide_tooltip)
+ToolTip(username_help, "Please insert your NOMAD name or email here.")
 
 password_help = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
 password_help.grid(row=2, column=1, padx=5)
-password_help.bind("<Enter>", lambda e: show_tooltip(e, "Please insert your NOMAD password here."))
-password_help.bind("<Leave>", hide_tooltip)
+ToolTip(password_help, "Please insert your NOMAD password here.")
 
 # Buttons mit tatsächlichen Funktionsaufrufen
 buttons_info1 = [ #buttons für die kopfzeile
@@ -516,8 +504,7 @@ for text, command, tooltip in buttons_info1:
     
     help_label = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
-    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
-    help_label.bind("<Leave>", hide_tooltip)
+    ToolTip(help_label, tooltip)
     
     row_index += 1
 
@@ -544,8 +531,7 @@ drop_label.dnd_bind('<<Drop>>', handle_drop)
 # Hilfe-Icon separat rechts
 file_help = tk.Label(scrollable_frame, text="❓", fg="gray", cursor="hand2")
 file_help.grid(row=row_index, column=1, padx=5)
-file_help.bind("<Enter>", lambda e: show_tooltip(e, "Choose Excel file or drag it here."))
-file_help.bind("<Leave>", hide_tooltip)
+ToolTip(file_help, "Choose Excel file or drag it here.")
 
 
 file_path_label = ttk.Label(scrollable_frame, text="data path: ", foreground="gray")
@@ -594,8 +580,7 @@ for text, command, tooltip in buttons_info2:
     
     help_label = tk.Label(frame1, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
-    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
-    help_label.bind("<Leave>", hide_tooltip)
+    ToolTip(help_label, tooltip)
     
     row_index += 1
 
@@ -636,8 +621,7 @@ for idx, (text, var, tooltip) in enumerate(plot_options):
     check = ttk.Checkbutton(plot_options_frame, text=text, variable=var, style="TCheckbutton")
     check.grid(row=idx, column=0, sticky="w", padx=10)
     apply_hover_effect(check, "TCheckbutton", "Hover.TCheckbutton")
-    check.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
-    check.bind("<Leave>", hide_tooltip)
+    ToolTip(check, tooltip)
 
 #ende frame no 1
 buttons_info3 = [ #buttons für frame 2
@@ -652,8 +636,7 @@ uvvis_toggle_button.grid(row=row_index+2, column=0, pady=5, sticky="w")
 apply_hover_effect(uvvis_toggle_button, "TButton", "Hover.TButton")
 help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
 help_label.grid(row=row_index, column=1, padx=5)
-help_label.bind("<Enter>", lambda e: show_tooltip(e, "Toggle between wavelength [nm] and photon energy [eV]."))
-help_label.bind("<Leave>", hide_tooltip)
+ToolTip(help_label, "Toggle between wavelength [nm] and photon energy [eV].")
 
 row_index += 1
 
@@ -664,8 +647,7 @@ for text, command, tooltip in buttons_info3:
     
     help_label = tk.Label(frame2, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
-    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
-    help_label.bind("<Leave>", hide_tooltip)
+    ToolTip(help_label, tooltip)
     
     row_index += 1
 
@@ -675,7 +657,8 @@ buttons_info4 = [ #buttons für frame 3
     ("Excel creator for NOMAD", excel_creator_function, "Create an Excel file for NOMAD."),
     ("Short EQE plotting", EQE_Joshua, "Use a short EQE plotting tool for not uploaded data."),
     ("Rename JV files", Rename_JV_files, "Use a script to rename your JV files to the correct NOMAD format. Adds .jv to the end of the filename and changes the cycle and pixel info to be read properly"), 
-    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format.")
+    ("Puri JV split", spilt_puri_tandem_files, "Split the Puri files to old JV format."),
+    ("Latin Hypercube Sampling", latin_hypercube_sampler, "Generate Sample configurations with LHS")
 ]
 
 row_index = 1
@@ -686,8 +669,7 @@ for text, command, tooltip in buttons_info4:
     
     help_label = tk.Label(frame3, text="❓", fg="gray", cursor="hand2")
     help_label.grid(row=row_index, column=1, padx=5)
-    help_label.bind("<Enter>", lambda e, t=tooltip: show_tooltip(e, t))
-    help_label.bind("<Leave>", hide_tooltip)
+    ToolTip(help_label, tooltip)
     
     row_index += 1
 
