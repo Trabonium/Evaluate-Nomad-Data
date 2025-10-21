@@ -84,7 +84,17 @@ def tandem_puri_jv_split(master):
             reverse = parse_scan(reverse_lines)
 
             scan_index = idx // 2 + 1
-            filename = f"{sample_name}.px{scan_index}.jv.csv"
+            # Prefer preserving the original filename base (remove known exported suffixes)
+            orig_basename = os.path.basename(file_path)
+            original_base = None
+            for ext in ("_ivraw.csv", ".jv.csv", ".csv"):
+                if orig_basename.lower().endswith(ext):
+                    original_base = orig_basename[:-len(ext)]
+                    break
+            if original_base is None:
+                original_base = os.path.splitext(orig_basename)[0]
+
+            filename = f"{original_base}.px{scan_index}.jv.csv"
             output_path = os.path.join(output_folder, filename)
 
             content = format_old_file(sample_name, area, is_illuminated, date, forward, reverse)
