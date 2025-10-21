@@ -92,7 +92,7 @@ def tandem_puri_jv_split(master):
                 out_file.write(content)
 
     def run_conversion():
-        input_folder = filedialog.askdirectory(title="Select Folder with _ivraw.csv files", parent=window)
+        input_folder = filedialog.askdirectory(title="Select Folder with JV/_ivraw CSV files", parent=window)
         if not input_folder:
             return
         
@@ -101,7 +101,8 @@ def tandem_puri_jv_split(master):
 
         processed = 0
         for filename in os.listdir(input_folder):
-            if filename.lower().endswith("_ivraw.csv"):
+            # accept the original _ivraw.csv plus Puri-exported files like *.jv.csv
+            if filename.lower().endswith(("_ivraw.csv", ".jv.csv", ".csv")):
                 process_file(os.path.join(input_folder, filename), output_folder)
                 processed += 1
                 
