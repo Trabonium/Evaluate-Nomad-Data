@@ -386,7 +386,13 @@ def init_spinner_ui(master):
     TARGET_SIZE = (100, 100)
 
     try:
-        gif_path = resource_path(r"Evaluate-Nomad-Data\giffolder\spinner.gif")
+        # Use project-relative giffolder path (avoid duplicating repository folder name)
+        gif_path = resource_path(os.path.join("giffolder", "spinner.gif"))
+        # Fallback: if resource_path did not locate the file (e.g. different cwd), try next to this script
+        if not os.path.exists(gif_path):
+            alt = os.path.join(os.path.dirname(__file__), "giffolder", "spinner.gif")
+            if os.path.exists(alt):
+                gif_path = alt
         gif = Image.open(gif_path)
         frames.clear()  # falls neu initialisiert
 
