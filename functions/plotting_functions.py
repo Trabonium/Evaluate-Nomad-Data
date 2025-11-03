@@ -11,17 +11,124 @@ import math
 from scipy.stats import linregress
 from functions.api_calls_get_data import get_specific_data_of_sample
 
+def get_smart_axis_limits(data, quantity_name):
+    """
+    Get smart axis limits based on the quantity type and data range.
+    
+    Args:
+        data: array-like, data values
+        quantity_name: str, name of the quantity being plotted
+    
+    Returns:
+        tuple: (y_min, y_max) with smart limits
+    """
+    if len(data) == 0:
+        return 0, 1
+    
+    data_clean = data.dropna() if hasattr(data, 'dropna') else np.array(data)[~np.isnan(data)]
+    if len(data_clean) == 0:
+        return 0, 1
+        
+    data_min, data_max = np.min(data_clean), np.max(data_clean)
+    data_range = data_max - data_min
+    
+    if quantity_name == 'efficiency':
+        # PCE: round to nearest 5% for wide ranges, 1% for narrow ranges
+        if data_range > 10:
+            return 0, math.ceil(data_max / 5) * 5
+        elif data_range > 5:
+            return math.floor(data_min), math.ceil(data_max)
+        else:
+            # For narrow ranges, add some padding
+            padding = max(1, data_range * 0.1)
+            return max(0, math.floor(data_min - padding)), math.ceil(data_max + padding)
+    
+    elif quantity_name == 'fill_factor':
+        # FF: use 0.1 increments, typically between 0.3-0.9
+        y_min = math.floor(data_min * 10) / 10
+        y_max = math.ceil(data_max * 10) / 10
+        # Ensure reasonable bounds for fill factor
+        y_min = max(0.0, y_min - 0.05)
+        y_max = min(1.0, y_max + 0.05)
+        return y_min, y_max
+    
+    elif quantity_name == 'open_circuit_voltage':
+        # Voc: use 0.1V increments, typically between 0.8-1.3V
+        y_min = math.floor(data_min * 10) / 10
+        y_max = math.ceil(data_max * 10) / 10
+        # Add small padding
+        y_min = max(0.0, y_min - 0.05)
+        y_max = y_max + 0.05
+        return y_min, y_max
+    
+    elif quantity_name == 'short_circuit_current_density':
+        # Jsc: round to nearest integer, typically 10-25 mA/cm²
+        if data_range > 10:
+            return math.floor(data_min / 5) * 5, math.ceil(data_max / 5) * 5
+        else:
+            return math.floor(data_min), math.ceil(data_max)
+    
+    else:
+        # Default case: add 10% padding and round nicely
+        padding = max(0.1, data_range * 0.1)
+        y_min = data_min - padding
+        y_max = data_max + padding
+        
+        # Try to round to nice numbers
+        if data_range > 10:
+            return math.floor(y_min), math.ceil(y_max)
+        elif data_range > 1:
+            return math.floor(y_min * 10) / 10, math.ceil(y_max * 10) / 10
+        else:
+            return math.floor(y_min * 100) / 100, math.ceil(y_max * 100) / 100
+
+# Custom color palette for specific groups (Daniel's colors)
+DANIEL_COLORS = {
+    'RepA': '#001898',
+    'RepB': '#006D94', 
+    'ref1': '#00876C',
+    'ref2': '#00876C',
+    'RepC': '#33AD59',
+    'RepE': '#66CB66',
+    'RepD': '#AFE399',  # excluded group
+    
+    # ROB series colors
+    'ref1': '#00876C',    # Rob Ref (same as Rob Ref)
+    'h=30': '#A03E63',    # h30
+    'h=25': '#DD85AB',    # h25
+    'tQ=38,5': '#500D63',    # tQ
+    'tQ=31,5': '#95409A',    # tQ (variant)
+    'td=17': '#23003C',    # td
+    'Q=55': '#10E0C9',    # Q
+    'Q=45': '#3EFEDD',    # Q (variant)
+    'ref2': '#00876C',    # Rob Ref (same as Rob Ref)
+    'P=2,7': '#FFC548',   # P
+    'P=3,3': '#FF9965',   # P (variant)
+    'A=5,4': '#7E5F5E',   # A (variant)
+    'A=4,5': '#947A72'    # A (variant)
+}
+
 ### Function to plot JV curves ###______________________________________________________________________________________________________
 
 def plot_JV_curves(result_df, curve_type, nomad_url, token):
 
     fig, ax = plt.subplots()
     
-    # Define a color palette for the groups
-    colors = plt.cm.viridis(np.linspace(0, 0.95, len(result_df['category'].unique())))
+    # Create category-to-color mapping using Daniel's custom colors
+    unique_categories = result_df['category'].unique()
+    category_colors = {}
     
-    # Set the color cycle for the axes
-    ax.set_prop_cycle(color=colors)
+    # Use custom colors for known categories, fallback to viridis for unknown ones
+    viridis_fallback = plt.cm.viridis(np.linspace(0, 0.95, len(unique_categories)))
+    fallback_idx = 0
+    
+    for category in unique_categories:
+        if category in DANIEL_COLORS:
+            category_colors[category] = DANIEL_COLORS[category]
+        else:
+            category_colors[category] = viridis_fallback[fallback_idx]
+            fallback_idx += 1
+    
     max_Voc = 0
     PCE = None
     for index, row in result_df.iterrows():
@@ -33,13 +140,18 @@ def plot_JV_curves(result_df, curve_type, nomad_url, token):
                     PCE = cell["jv_curve"][i]["efficiency"]
                     if PCE == row[f'{curve_type}'] and \
                    (curve_type == 'maximum_efficiency' or curve_type == 'closest_median'):
+                        # Get the color for this category
+                        category_color = category_colors[row['category']]
+                        
                         if mpl.rcParams["text.usetex"]:
                             ax.plot(cell["jv_curve"][i]["voltage"], \
                                     cell["jv_curve"][i]["current_density"], \
+                                    color=category_color, \
                                     label=fr"{row['category']}: {round(PCE,2)}\%")
                         else:
                             ax.plot(cell["jv_curve"][i]["voltage"], \
                                     cell["jv_curve"][i]["current_density"], \
+                                    color=category_color, \
                                     label=f"{row['category']}: {round(PCE,2)}%")
                         if max_Voc < max(cell["jv_curve"][i]["voltage"]):
                             max_Voc = max(cell["jv_curve"][i]["voltage"])
@@ -250,13 +362,38 @@ def plot_MPP_curves(df, result_df, nomad_url, token):
 def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], SeparateScanDir=False):
     
     
-    # Define the base color palette for unique variations
-    base_colors = plt.cm.viridis(np.linspace(0, 0.95, len(df[quantity].unique())))
+    # Create category-to-color mapping using Daniel's custom colors
+    unique_categories = df[quantity].unique()
+    category_colors = {}
+    
+    # Use custom colors for known categories, fallback to viridis for unknown ones
+    viridis_fallback = plt.cm.viridis(np.linspace(0, 0.95, len(unique_categories)))
+    fallback_idx = 0
+    
+    for category in unique_categories:
+        if category in DANIEL_COLORS:
+            category_colors[category] = DANIEL_COLORS[category]
+        else:
+            category_colors[category] = viridis_fallback[fallback_idx]
+            fallback_idx += 1
+    
+    # Convert to list for compatibility with existing code
+    base_colors = [category_colors[cat] for cat in unique_categories]
 
     if SeparateScanDir:
         # Extend the colors for 'forward' groups by shifting brightness
         bw_colors = base_colors
-        fw_colors = fw_colors = [(color[0], color[1], color[2], 0.5) for color in base_colors]
+        
+        # Convert hex colors to RGBA with transparency for forward scans
+        fw_colors = []
+        for color in base_colors:
+            if isinstance(color, str):  # hex color
+                # Convert hex to RGB, then add transparency
+                import matplotlib.colors as mcolors
+                rgb = mcolors.to_rgb(color)
+                fw_colors.append((rgb[0], rgb[1], rgb[2], 0.5))
+            else:  # already RGBA tuple
+                fw_colors.append((color[0], color[1], color[2], 0.5))
 
         # Combine backwards and forwards colors interleaved
         colors = []
@@ -440,10 +577,16 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
                         jittered_x = np.random.normal(loc=group_position, scale=0.05, size=len(group_data))
                         ax.scatter(jittered_x, group_data, color='black', alpha=alpha, zorder=2, s=25, marker=scatter_cycle_marker[k+1])
         
+
+        
+        
         # Axis label and Ticks
         ax.set_ylabel(f"{jv_quantity_labels[jv_quantity[i]]}", size=16)
         ax.set_xticks([i + 1 for i in range(len(sorted_variations))])
         ax.set_xticklabels(sorted_variations, size=14, rotation=45 if len(sorted_variations) > 4 else 0, ha='right' if len(sorted_variations) > 4 else 'center')
+        # Apply smart y-axis limits
+        y_min, y_max = get_smart_axis_limits(df[jv_quantity[i]].dropna(), jv_quantity[i])
+        ax.set_ylim(y_min, y_max)
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10])) 
         ax.tick_params(axis='both')
         ax.grid(axis='y', color='grey', linestyle='--', linewidth=0.5, alpha=0.5) 
@@ -461,8 +604,16 @@ def plot_box_and_scatter(df, filter_cycle_boolean, quantity=['variation'], Separ
         fig.patch.set_facecolor('none')
         ax.patch.set_facecolor('none')
 
-    # Adjust layout to prevent overlap
-    plt.tight_layout()
+    # Use consistent subplot spacing instead of tight_layout to ensure uniform plot dimensions
+    # This prevents variable x-label lengths from affecting plot box sizes
+    plt.subplots_adjust(
+        left=0.08,      # Left margin
+        right=0.95,     # Right margin  
+        top=0.95,       # Top margin
+        bottom=0.2,    # Bottom margin (extra space for rotated labels)
+        wspace=0.15,    # Width spacing between subplots
+        hspace=0.25     # Height spacing between subplots
+    )
     
     return fig
 
