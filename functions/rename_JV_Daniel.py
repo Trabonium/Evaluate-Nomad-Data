@@ -69,10 +69,10 @@ def measurement_file_organizer(master):
     
     def rename_files(path, cycle_to_keep, preserve_cycle):
         rename_patterns = {
-            "_01_": ".px1",
-            "_02_": ".px2",
-            "_03_": ".px3",
-            "_04_": ".px4"
+            "_01_C": ".px1_C",
+            "_02_C": ".px2_C",
+            "_03_C": ".px3_C",
+            "_04_C": ".px4_C"
         }
         
         cycle_pattern = "*Cycle_*_illu*.csv" if preserve_cycle else f"*Cycle_{cycle_to_keep}_illu*.csv"
