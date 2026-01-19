@@ -1,3 +1,4 @@
+import glob
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -28,7 +29,7 @@ def tandem_puri_jv_split(master):
                 metadata[key.strip()] = value.strip()
         return metadata
 
-    def format_old_file(sample_name, area, is_illuminated, date, scan1, scan2):
+    def format_old_file(sample_name, area, is_illuminated, date, scan1, scan2, comment):
         header = [
             f"LTI @ KIT\tPV cell J-V measurement - measured by Puri \t\t",
             f"Cell ID:\t{sample_name}\t\t",
@@ -39,7 +40,7 @@ def tandem_puri_jv_split(master):
             f"Voc [V]:\t0.000000E+0\t0.000000E+0\t",
             "Fill factor:\t0.000000E+0\t0.000000E+0\t",
             "Efficiency:\t0.000000E+0\t0.000000E+0\t",
-            "Commentary:\t\t\t",
+            f"Commentary:\t{comment}\t\t",
             "Hysteresis\t1\t\t",
             "Voltage [V]\tCurrent density [1] [mA/cm^2]\tCurrent density [2] [mA/cm^2]\tAverage current density [mA/cm^2]"
         ]
@@ -65,6 +66,7 @@ def tandem_puri_jv_split(master):
         area = metadata.get("Active Area (cm2)", "1.0")
         date = metadata.get("Test Start Time", "20000000_00:00:00")
         date = datetime.strptime(date, "%Y%m%d_%H:%M:%S").strftime("%Y-%m-%d\t%H:%M:%S")
+        comment = metadata.get("Remarks", "")
         is_illuminated = float(metadata.get("Illumination Intensity (mW/cm2)", "0")) > 0
 
         blocks = parse_sample_blocks(lines[i:])
@@ -87,17 +89,24 @@ def tandem_puri_jv_split(master):
             # Prefer preserving the original filename base (remove known exported suffixes)
             orig_basename = os.path.basename(file_path)
             original_base = None
+            cycle = 0
             for ext in ("_ivraw.csv", ".jv.csv", ".csv"):
                 if orig_basename.lower().endswith(ext):
-                    original_base = orig_basename[:-len(ext)]
+                    original_base = orig_basename[:-len(ext)-14]
+                    #Check if cycle 0 exsists and modify cycle number accordingly since files are usually measured in order and sorted if the folder
+                    if os.path.exists(os.path.join(output_folder, f"{original_base}.px{scan_index}Cycle_0.jv.csv")):
+                        cycle += 1
+                    else:
+                        cycle = 0
                     break
             if original_base is None:
                 original_base = os.path.splitext(orig_basename)[0]
 
-            filename = f"{original_base}.px{scan_index}.jv.csv"
+
+            filename = f"{original_base}.px{scan_index}Cycle_{cycle}.jv.csv"
             output_path = os.path.join(output_folder, filename)
 
-            content = format_old_file(sample_name, area, is_illuminated, date, forward, reverse)
+            content = format_old_file(sample_name, area, is_illuminated, date, forward, reverse, comment)
             with open(output_path, 'w', encoding='utf-8') as out_file:
                 out_file.write(content)
 
