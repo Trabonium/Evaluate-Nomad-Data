@@ -117,7 +117,7 @@ nomad_url = "http://elnserver.lti.kit.edu/nomad-oasis/api/v1"
 
 global token
 try:
-    response = requests.get(f"{nomad_url}/auth/token", params={"username": nomad_user, "password": nomad_pw})
+    response = requests.post(f"{nomad_url}/auth/token", data={"username": nomad_user, "password": nomad_pw})
     response.raise_for_status()
     token = response.json().get('access_token', None)
     print("Login successful.", f"Logged in as {nomad_user}")
