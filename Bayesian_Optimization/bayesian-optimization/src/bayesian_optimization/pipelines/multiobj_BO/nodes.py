@@ -1,13 +1,19 @@
 
 import pandas as pd
 import numpy as np
-import os, sys, requests, logging, math
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "..")))
+import os, sys, requests, logging
+import torch
 
 from kedro.config import OmegaConfigLoader
 from kedro.framework.project import settings
 from pathlib import Path
+from botorch.acquisition.multi_objective.max_value_entropy_search import qLowerBoundMultiObjectiveMaxValueEntropySearch
+from botorch.models import SingleTaskGP
+from botorch.models.transforms import Standardize
+from botorch.optim import optimize_acqf
+from botorch.utils.multi_objective.pareto import is_non_dominated
+from ..BO_prediction.nodes import _normalize_columns
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +21,8 @@ logger = logging.getLogger(__name__)
 #all input parameters must be specified here
 BOUNDS = {'dropping_speed': (25, 1000),'dropping_time': (20, 40),'rotation_time_2': (11, 35)}
 
+#Champion mode reduces the input data to only the best PCE for each unique set of experiment settings
+CHAMPION_MODE = True
 
 def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
     #get the experiment data from NOMAD db and add it to the df
@@ -171,28 +179,6 @@ def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
 
     return experiment_ids
 
-def _normalize_columns(df: pd.DataFrame, normalization_bounds: dict):
-    """normalizes all column names corresponding to labels in normalization_bounds to (0,1)
-    df: Dataframe, must contain all column labels present in normalization_bounds
-    normalization_bounds: dict of 2 tuples indicating min and max for normalization range
-    """
-    for label in normalization_bounds:
-        if not df.columns.__contains__(label):
-            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
-            return df
-        df[label] = (df[label] - normalization_bounds[label][0]) / (normalization_bounds[label][1] - normalization_bounds[label][0])
-
-    return df
-
-def _denormalize_columns(df: pd.DataFrame, normalization_bounds: dict):
-    for label in normalization_bounds:
-        if not df.columns.__contains__(label):
-            logger.error(f'Column {label} was specified in bounds but is not present in the dataframe!')
-            return df
-        df[label] = (df[label] * (normalization_bounds[label][1] - normalization_bounds[label][0])) + normalization_bounds[label][0]
-    
-    return df
-
 def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     #convert data types, clean data and create new columns that are entirely predecated on existing columns
     #rename columns
@@ -213,5 +199,132 @@ def preprocess_data(experiment_data: pd.DataFrame) -> pd.DataFrame:
     #normalize input parameters
     experiment_data = _normalize_columns(experiment_data, BOUNDS)
 
-    return experiment_data
+    if CHAMPION_MODE:
+        idx = (
+            experiment_data
+                .groupby(list(BOUNDS.keys()))["mean_efficiency"]
+                .idxmax()
+            )
+        experiment_data = experiment_data.loc[idx].reset_index(drop=True)
 
+    FACTOR_TO_KEEP = 1
+    if (FACTOR_TO_KEEP<1):
+        rowcount = len(experiment_data)
+        experiment_data = experiment_data.head(int(rowcount*FACTOR_TO_KEEP))
+
+    #invert efficiency values to accomodate minimization of BO algorithm
+    experiment_data_MIN = experiment_data.copy()
+    experiment_data_MIN[['efficiency_forward', 'efficiency_backward']] = experiment_data_MIN[['efficiency_forward', 'efficiency_backward']] * -1
+
+    return experiment_data, experiment_data_MIN
+
+def _format_tensor(t):
+    return np.array2string(t.detach().cpu().numpy(), separator=", ")
+
+def _denormalize_single_set(values: list, normalization_bounds: list) -> list:
+    """denormalizes a single value vector according to bounds (2d array). Values must have the same size as normalization_bounds and is assumed to be in the same order."""
+    if (len(values) != len(normalization_bounds)):
+        logger.error(f'During denormalization, two lists of different lengths were specified to denormalize.')
+        return None
+    denormalized = []
+    for x in range(len(values)):
+        denormalized.append((values[x] * (normalization_bounds[x][1] - normalization_bounds[x][0])) + normalization_bounds[x][0])
+    return denormalized
+    
+
+def mobo_predict(data_maximization: pd.DataFrame, data_minimization: pd.DataFrame):
+    
+    #take only relevant columns and convert them to torch usable format
+    train_input = torch.tensor(data_minimization[BOUNDS.keys()].to_numpy(), dtype=torch.double)
+    train_values = torch.tensor(data_minimization[['efficiency_forward', 'efficiency_backward']].to_numpy(), dtype=torch.double)
+    train_values_maximization = torch.tensor(data_maximization[['efficiency_forward', 'efficiency_backward']].to_numpy(), dtype=torch.double)
+    
+    #initialize model
+    y_transform = Standardize(train_values.shape[-1])
+    model = SingleTaskGP(
+        train_X=train_input,
+        train_Y=train_values,
+        input_transform=None, #input was already normalized before
+        outcome_transform=Standardize(train_values.shape[-1])
+    )
+    model.eval()
+
+    #calculate hypercell bounds from output values
+    
+    # observed objective range
+    y_min = train_values.min(dim=0).values
+    y_max = train_values.max(dim=0).values
+
+    # upper cap (slightly worse than worst observed)
+    upper_cap = y_max + 1.0
+
+    hypercell_bounds = torch.tensor(
+        [[
+            [y_min.tolist()],     # lower bounds
+            [upper_cap.tolist()]  # upper bounds
+        ]],
+        dtype=train_values.dtype,
+    )
+    assert torch.isfinite(hypercell_bounds).all()
+
+    #initialize acquisition function
+    acq_func = qLowerBoundMultiObjectiveMaxValueEntropySearch(
+        model=model,
+        hypercell_bounds=hypercell_bounds,
+        X_pending=None,
+    )
+
+    normalized_bounds = torch.tensor([[0.,0.,0.],[1.,1.,1.]], dtype=torch.double)
+
+    candidate, acquisition_value = optimize_acqf(
+        acq_function=acq_func,
+        bounds=normalized_bounds,
+        q=1,
+        num_restarts=30,
+        raw_samples=512,
+        sequential=True
+    )
+    candidate_denorm = _denormalize_single_set(candidate.tolist()[0], list(BOUNDS.values()))
+    
+
+    nd_mask = is_non_dominated(train_values_maximization)
+    pareto_X = train_input[nd_mask]
+    pareto_Y = train_values[nd_mask]
+
+    #Pareto Y is from min space
+    pareto_Y *= -1
+
+    predicted_value =  model.posterior(candidate).mean
+
+    #prepare output file
+    text_output = []
+
+    text_output.append("=== Multiobjective BO Iteration Summary ===\n")
+
+    text_output.append("--- Input Settings: ---\n")
+
+    text_output.append("Bounds:")
+    text_output.append(str(BOUNDS))
+
+    text_output.append("\nChampion Mode:")
+    text_output.append(str(CHAMPION_MODE))
+
+    text_output.append("\n--- Output: ---")
+
+    text_output.append("\nPareto Front (X):")
+    text_output.append(_format_tensor(pareto_X))
+    text_output.append("\nPareto Front (Y):")
+    text_output.append(_format_tensor(pareto_Y))
+
+    text_output.append("\nHypercell Bounds:")
+    text_output.append(_format_tensor(hypercell_bounds))
+
+    text_output.append("\nSelected Candidate Point:")
+    text_output.append(str(candidate_denorm))
+
+    text_output.append("\nPredicted Value at Candidate:")
+    text_output.append(_format_tensor(predicted_value*-1))
+
+    text_output = "\n".join(text_output)
+
+    return text_output

@@ -38,6 +38,15 @@
             "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
             "module": "kedro",
             "args": ["run", "--from-nodes=preprocess_data"]
+        },
+        {
+            "name": "Python: Kedro Run MOBO pipeline",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
+            "module": "kedro",
+            "args": ["run", "--pipeline=mobo", "--from-nodes=preprocess_data"]
         }
     ]
 }

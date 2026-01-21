@@ -16,6 +16,11 @@ preprocessed_data:
   type: pickle.PickleDataset
   backend: pickle
 
+preprocessed_data_minimization:
+  filepath: data/05_model_input/preprocessed_data_minimization.pkl
+  type: pickle.PickleDataset
+  backend: pickle
+
 prediction:
   filepath: data/07_model_output/prediction.csv
   type: pandas.CSVDataset
@@ -33,3 +38,7 @@ dimension_stacking_plot_1:
 dimension_stacking_plot_2:
   filepath: data/08_reporting/dimension_stacking_plot_exploration.jpg
   type: matplotlib.MatplotlibWriter
+
+mobo_prediction:
+  filepath: data/07_model_output/mobo_prediction.txt
+  type: text.TextDataset
