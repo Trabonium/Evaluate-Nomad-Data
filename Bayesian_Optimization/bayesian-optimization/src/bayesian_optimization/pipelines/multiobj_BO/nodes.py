@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 #all input parameters must be specified here
 BOUNDS = {'dropping_speed': (25, 1000),'dropping_time': (20, 40),'rotation_time_2': (11, 35)}
 
-#Champion mode reduces the input data to only the best PCE for each unique set of experiment settings
+#Champion mode reduces the input data to only the best PCE result for each unique set of experiment settings
 CHAMPION_MODE = True
 
 def get_data_from_DB(experiment_ids: pd.DataFrame) -> pd.DataFrame:
@@ -317,7 +317,7 @@ def mobo_predict(data_maximization: pd.DataFrame, data_minimization: pd.DataFram
     text_output.append(_format_tensor(pareto_Y))
 
     text_output.append("\nHypercell Bounds:")
-    text_output.append(_format_tensor(hypercell_bounds))
+    text_output.append(_format_tensor(hypercell_bounds*-1))
 
     text_output.append("\nSelected Candidate Point:")
     text_output.append(str(candidate_denorm))
