@@ -11,44 +11,6 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
-        },
-        {
-            "name": "Python: Kedro Run",
-            "type": "debugpy",
-            "request": "launch",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
-            "module": "kedro",
-            "args": ["run"]
-        },
-        {
-            "name": "Python: Kedro Run, no prediction",
-            "type": "debugpy",
-            "request": "launch",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
-            "module": "kedro",
-            "args": ["run", "--to-nodes=preprocess_data"]
-        },
-        {
-            "name": "Python: Kedro Run, no database load",
-            "type": "debugpy",
-            "request": "launch",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
-            "module": "kedro",
-            "args": ["run", "--from-nodes=preprocess_data"]
-        },
-        {
-            "name": "Python: Kedro Run MOBO pipeline",
-            "type": "debugpy",
-            "request": "launch",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
-            "module": "kedro",
-            "args": ["run", "--pipeline=mobo" 
-                    //,"--from-nodes=preprocess_data"
-                    ]
         }
     ]
 }
