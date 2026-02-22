@@ -90,7 +90,7 @@ def login_handler():
             messagebox.showerror("Error", "Please insert name and password.")
             return
         try:
-            response = requests.get(f"{nomad_url}/auth/token", params={"username": username, "password": password})
+            response = requests.post(f"{nomad_url}/auth/token", data={"username": username, "password": password})
             response.raise_for_status()
             token = response.json().get('access_token', None)
         except requests.exceptions.RequestException as e:
