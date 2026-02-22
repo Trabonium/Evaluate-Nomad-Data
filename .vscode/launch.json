@@ -46,7 +46,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}${pathSeparator}Bayesian_Optimization${pathSeparator}bayesian-optimization${pathSeparator}",
             "module": "kedro",
-            "args": ["run", "--pipeline=mobo", "--from-nodes=preprocess_data"]
+            "args": ["run", "--pipeline=mobo" 
+                    //,"--from-nodes=preprocess_data"
+                    ]
         }
     ]
 }
